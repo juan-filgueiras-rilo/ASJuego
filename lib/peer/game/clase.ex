@@ -2,6 +2,11 @@ defmodule Clase do
     use Guardable;
 
     def constructor(nombre, constVid, linVid, cuadVid, hechizos)
+        when is_binary(nombre)
+        and is_integer(constVid)
+        and is_integer(linVid)
+        and is_integer(cuadVid)
+        and is_list(hechizos)
     do
         {nombre, constVid, linVid, cuadVid, hechizos}
     end
@@ -14,6 +19,16 @@ defmodule Clase do
             {_, const, lin, cuad, _} -> const + (lin * nivel) + (cuad * nivel * nivel)
             _ -> :error
         end
+    end
+
+    def getHechizos({_, _, _, _, hechizos})
+    do
+        hechizos
+    end
+
+    def getHechizosDisponibles({_, _, _, _, hechizos}, nivel)
+    do
+        Enum.filter(hechizos, fn x -> Hechizo.getNivelMin(x) >= nivel end)
     end
 
     def load(datos)

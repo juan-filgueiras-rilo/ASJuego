@@ -6,12 +6,32 @@ defmodule Hechizo do
         {nombre, const, lineal, cuadr, nivelMin, tipo, duracion, descripcion, enfr}
     end
 
+    def getNivelMin({_, _, _, _, nivelMin, _, _, _, _})
+    do
+        nivelMin
+    end
+
+    def getNombre({nombre, _, _, _, _, _ , _, _, _})
+    do
+        nombre
+    end
+
+    def getFuerza({_, const, lineal, cuadr, _, _, _, _, _}, nivel)
+    do
+        const + (lineal * nivel) + (cuadr * nivel * nivel)
+    end
+
+    def getTipo({_, _, _, _, _, tipo, _, _, _})
+    do
+        tipo
+    end
+
     def save({nombre, const, lineal, cuadr, nivelMin, tipo, duracion, descripcion, enfr})
     do
         elem(JSON.encode([
             nombre: nombre,
             const: const,
-            linea: lineal,
+            lineal: lineal,
             cuadr: cuadr,
             nivelMin: nivelMin,
             tipo: tipo,

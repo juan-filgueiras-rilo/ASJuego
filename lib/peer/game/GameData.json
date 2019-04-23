@@ -1,0 +1,155 @@
+{
+    "mundo": {
+        "sectores": []
+    },
+    "jugador": {
+        "nombre" : ""
+    },
+    "clases": [
+        {
+            "nombre": "guerrero",
+            "constVid": 100,
+            "linVid": 10,
+            "cuadVid": 2,
+            "hechizos": [
+                {
+                    "nombre": "Mazazo",
+                    "const": 10,
+                    "lineal": 20,
+                    "cuadr": 2,
+                    "nivelMin": 1,
+                    "tipo": "DMG",
+                    "duracion": 1,
+                    "descripcion": "Golpea con un mazazo al enemigo.",
+                    "enfr": 1
+                },
+                {
+                    "nombre": "Puñalada",
+                    "const": 6,
+                    "lineal": 12,
+                    "cuadr": 1,
+                    "nivelMin": 1,
+                    "tipo": "DMG",
+                    "duracion": 2,
+                    "descripcion": "Aplica una puñalada al enemigo que lo deja sangrando.",
+                    "enfr": 3
+                },
+                {
+                    "nombre": "Lamer heridas",
+                    "const": 30,
+                    "lineal": 10,
+                    "cuadr": 1,
+                    "nivelMin": 3,
+                    "tipo": "CUR",
+                    "duracion": 2,
+                    "descripcion": "Lame tus heridas para curarte y luchar un día más.",
+                    "enfr": 5
+                }
+            ]
+        },
+        {
+            "nombre": "hechizero",
+            "constVid": 90,
+            "linVid": 7,
+            "cuadVid": 1,
+            "hechizos": [
+                {
+                    "nombre": "Bola de fuego",
+                    "const": 20,
+                    "lineal": 20,
+                    "cuadr": 2,
+                    "nivelMin": 1,
+                    "tipo": "DMG",
+                    "duracion": 1,
+                    "descripcion": "Arroja una bola de fuego.",
+                    "enfr": 2
+                },
+                {
+                    "nombre": "Expelliarmus",
+                    "const": 6,
+                    "lineal": 12,
+                    "cuadr": 1,
+                    "nivelMin": 1,
+                    "tipo": "DMG",
+                    "duracion": 2,
+                    "descripcion": "Lanzas un expelliarmus que trata de desarmar al enemigo, pero fallas y lo hieres.",
+                    "enfr": 1
+                },
+                {
+                    "nombre": "Curación menor",
+                    "const": 30,
+                    "lineal": 5,
+                    "cuadr": 1,
+                    "nivelMin": 1,
+                    "tipo": "CUR",
+                    "duracion": 2,
+                    "descripcion": "Aplica un hechizo curativo para sanar tus rasguños.",
+                    "enfr": 1
+                },
+                {
+                    "nombre": "Curación mayor",
+                    "const": 50,
+                    "lineal": 7,
+                    "cuadr": 2,
+                    "nivelMin": 5,
+                    "tipo": "CUR",
+                    "duracion": 2,
+                    "descripcion": "Aplica un hechizo curativo potente capaz de curar los daños más graves de tu cuerpo.",
+                    "enfr": 5
+                }
+            ]
+        },
+        {
+            "nombre": "brujo",
+            "constVid": 90,
+            "linVid": 7,
+            "cuadVid": 1,
+            "hechizos": [
+                {
+                    "nombre": "Robo de vida",
+                    "const": 10,
+                    "lineal": 4,
+                    "cuadr": 1,
+                    "nivelMin": 1,
+                    "tipo": "ROB",
+                    "duracion": 1,
+                    "descripcion": "Roba un poco de vida al enemigo",
+                    "enfr": 1
+                },
+                {
+                    "nombre": "Enfermar",
+                    "const": 3,
+                    "lineal": 3,
+                    "cuadr": 1,
+                    "nivelMin": 3,
+                    "tipo": "DMG",
+                    "duracion": 3,
+                    "descripcion": "Aplicas una enfermedad al enemigo.",
+                    "enfr": 5
+                },
+                {
+                    "nombre": "Golpe bajo",
+                    "const": 30,
+                    "lineal": 5,
+                    "cuadr": 1,
+                    "nivelMin": 1,
+                    "tipo": "CUR",
+                    "duracion": 1,
+                    "descripcion": "Golpeas al enemigo utilizando tu bastón.",
+                    "enfr": 1
+                },
+                {
+                    "nombre": "Curación",
+                    "const": 30,
+                    "lineal": 4,
+                    "cuadr": 1,
+                    "nivelMin": 3,
+                    "tipo": "CUR",
+                    "duracion": 2,
+                    "descripcion": "Aplica un hechizo curativo.",
+                    "enfr": 5
+                }
+            ]
+        }
+    ]
+}
