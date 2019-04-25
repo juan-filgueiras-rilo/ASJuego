@@ -133,7 +133,7 @@
                     "lineal": 5,
                     "cuadr": 1,
                     "nivelMin": 1,
-                    "tipo": "CUR",
+                    "tipo": "DMG",
                     "duracion": 1,
                     "descripcion": "Golpeas al enemigo utilizando tu bastón.",
                     "enfr": 1
