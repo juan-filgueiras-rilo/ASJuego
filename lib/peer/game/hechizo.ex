@@ -26,6 +26,11 @@ defmodule Hechizo do
         tipo
     end
 
+    def getDuracion({_, _, _, _, _, _, duracion, _ ,_})
+    do
+        duracion
+    end
+
     def save({nombre, const, lineal, cuadr, nivelMin, tipo, duracion, descripcion, enfr})
     do
         elem(JSON.encode([

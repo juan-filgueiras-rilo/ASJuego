@@ -1,10 +1,4 @@
 {
-    "mundo": {
-        "sectores": []
-    },
-    "jugador": {
-        "nombre" : ""
-    },
     "clases": [
         {
             "nombre": "guerrero",

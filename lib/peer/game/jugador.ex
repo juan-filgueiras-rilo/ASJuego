@@ -40,6 +40,11 @@ defmodule Jugador do
         Clase.getHechizosDisponibles(clase, nivel)
     end
 
+    def getVida({_, _, _, vida})
+    do
+        vida
+    end
+
     def aplicarHechizo({nombrePropio, nivelPropio, clasePropia, vidaPropia}, hechizo, {nombreEnemigo, nivelEnemigo, claseEnemigo, vidaEnemigo})
     do
         # Utilizo un hechizo y devuelvo el par con los datos mios y del enemigo actualizados.

@@ -26,6 +26,11 @@ defmodule Clase do
         hechizos
     end
 
+    def getNombre({nombre, _, _, _, _})
+    do
+        nombre
+    end
+
     def getHechizosDisponibles({_, _, _, _, hechizos}, nivel)
     do
         Enum.filter(hechizos, fn x -> Hechizo.getNivelMin(x) >= nivel end)
@@ -35,13 +40,13 @@ defmodule Clase do
         when is_binary(datos)
     do
         leido = elem(JSON.decode(datos),1);
-        {
-            leido["nombre"],
-            leido["constVid"],
-            leido["linVid"],
-            leido["cuadVid"],
-            Enum.map(leido["hechizos"], fn x -> Hechizo.load(x) end)
-        }
+        Enum.map(elem(JSON.decode(leido),1)["clases"], fn x -> {
+            x["nombre"],
+            x["constVid"],
+            x["linVid"],
+            x["cuadVid"],
+            Enum.map(x["hechizos"], fn y -> Hechizo.load(elem(JSON.encode(y), 1)) end)
+        } end)
     end
 
     def save({nombre, constVid, linVid, cuadVid, hechizos})
