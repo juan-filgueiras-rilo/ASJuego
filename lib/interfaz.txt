@@ -1,0 +1,26 @@
+defmodule Interfaz do
+
+  def inicio() do
+	pidmenu = spawn(fn -> Interfaz.menu() end)
+	recibir(pidmenu)
+  end
+	
+  def recibir(pid) do
+	op = IO.gets()
+	send pid, (:op, op)
+	recibir(pid)
+  end
+  
+  def menu() do
+	receive
+		{:op, op} ->
+		{:iniciar} -> pid = Peer.buscar_rival() 
+					  send pid, {:start, self()}, 
+					  Game(:first),
+					  menu()
+		{:start, pid} -> Game(:second),
+						 menu()
+	end
+  end
+  
+end
