@@ -33,21 +33,31 @@ defmodule Hechizo do
 
     def save({nombre, const, lineal, cuadr, nivelMin, tipo, duracion, descripcion, enfr})
     do
-        elem(JSON.encode([
-            nombre: nombre,
-            const: const,
-            lineal: lineal,
-            cuadr: cuadr,
-            nivelMin: nivelMin,
-            tipo: tipo,
-            duracion: duracion,
-            descripcion: descripcion,
-            enfr: enfr
-        ]),1)
+        %{
+            "nombre" => nombre,
+            "const" => const,
+            "lineal" => lineal,
+            "cuadr" => cuadr,
+            "nivelMin" => nivelMin,
+            "tipo" => tipo,
+            "duracion" => duracion,
+            "descripcion" => descripcion,
+            "enfr" => enfr
+        }
     end
 
     def load(datos)
     do
-        elem(JSON.decode(datos),1)
+        {
+            datos["nombre"],
+            datos["const"], 
+            datos["lineal"], 
+            datos["cuadr"], 
+            datos["nivelMin"], 
+            datos["tipo"],
+            datos["duracion"],
+            datos["descripcion"],
+            datos["enfr"]
+        }
     end
 end

@@ -1,6 +1,8 @@
 {
     "jugador": {
         "nombre": "pepe",
-        "nivel": 1
+        "nivel": 1,
+        "vida": 100,
+        "clase": "guerrero"
     }
 }

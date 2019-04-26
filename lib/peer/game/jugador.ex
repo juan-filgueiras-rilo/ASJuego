@@ -14,25 +14,33 @@ defmodule Jugador do
     end
 
     def load(datos)
-        when is_binary(datos)
     do
-        leido = elem(JSON.decode(datos),1);
         {
-            leido["nombre"],
-            leido["nivel"],
-            leido["clase"],
-            leido["vida"]
+            datos["nombre"],
+            datos["nivel"],
+            Clase.load(datos["clase"]),
+            datos["vida"]
+        }
+    end
+
+    def saveWithClassName({nombre, nivel, clase, vida})
+    do
+        %{
+            "nombre" => nombre,
+            "nivel" => nivel,
+            "clase" => Clase.getNombre(clase),
+            "vida" => vida
         }
     end
 
     def save({nombre, nivel ,clase, vida})
     do
-        elem(JSON.encode(%{
+        %{
             "nombre" => nombre,
             "nivel" => nivel,
-            "clase" => clase,
+            "clase" => Clase.save(clase),
             "vida" => vida
-        }),1)
+        }
     end
 
     def getHechizosDisponibles({_, nivel, clase, _})
@@ -66,5 +74,10 @@ defmodule Jugador do
     do
         {jugador, enemigo} = aplicarHechizos(jugador, tl(hechizos), enemigo);
         aplicarHechizo(jugador, hd(hechizos), enemigo)
+    end
+
+    def subirNivel({nombre, nivel, clase, vida})
+    do
+        {nombre, nivel + 1, clase, Clase.getVidaMax(clase, nivel + 1)}
     end
 end
