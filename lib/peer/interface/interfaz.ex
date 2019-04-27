@@ -1,7 +1,7 @@
 
 defmodule Interfaz do
 
-  def inicio() do
+  def inicio(data) do
 	IO.puts ("Hola! Bienvenido a xxxxxxxxxxxx\n")
 	mipid = self()
 	pid = spawn(fn -> Interfaz.menu(mipid) end)
@@ -20,7 +20,6 @@ defmodule Interfaz do
 		:menu ->  	IO.puts ("Introduzca 1 para buscar rival")
 					IO.puts ("Introduzca 2 para mostrar estadisticas")
 					IO.puts ("Introduzca 3 para finalizar el juego\n")
-					IO.puts ("((TEMPORAL DE PRUEBA)) 4. Iniciar juego \n")
 					recibir(pid)
 		:exit -> :ok
 		:play -> IO.puts ("Usted desea jugar? (S o N)")
@@ -46,11 +45,10 @@ defmodule Interfaz do
 	end
   end
   
-  def op_juego("S\n", _) do
+  def op_juego("S\n", pid) do
 	IO.puts ("A jugar!")
-	receive	do
-		:end -> IO.puts ("Juego finalizado")
-	end
+	IO.puts ("Aqui hay que llamar a la logica del juego")
+	IO.puts ("Crear proceso pasando de parametro el pid de la interfaz de usuario")
   end
   
   def op_juego("N\n", pid) do
