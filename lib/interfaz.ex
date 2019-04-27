@@ -2,20 +2,26 @@ defmodule Interfaz do
 
   def inicio() do
 	IO.puts ("Hola! Bienvenido a xxxxxxxxxxxx\n")
-	pid = spawn(fn -> Interfaz.menu() end)
+	mipid = self()
+	pid = spawn(fn -> Interfaz.menu(mipid) end)
+	IO.puts ("Introduzca 1 para buscar rival")
+	IO.puts ("Introduzca 2 para mostrar estadisticas")
+	IO.puts ("Introduzca 3 para finalizar el juego\n")
 	recibir(pid)
   end
 	
   def recibir(pid) do
-	IO.puts ("Introduzca 1 para buscar rival")
-	IO.puts ("Introduzca 2 para mostrar estadisticas")
-	IO.puts ("Introduzca 3 para finalizar el juego\n")
 	op = IO.gets("")
 	IO.puts ("\n")
 	send pid, {:op, op}
-	finalizar(op)
-	:timer.sleep(1000);
-	recibir(pid)
+	
+	receive do
+		:menu ->  	IO.puts ("Introduzca 1 para buscar rival")
+					IO.puts ("Introduzca 2 para mostrar estadisticas")
+					IO.puts ("Introduzca 3 para finalizar el juego\n")
+					recibir(pid)
+		:exit -> :ok
+	end
   end
   
   def finalizar("3\n") do
@@ -25,29 +31,34 @@ defmodule Interfaz do
   def finalizar(_) do
   end
   
-  def menu() do
+  def menu(pid) do
 	receive do
-		{:op, op} -> operaciones(op)
-					 menu()
+		{:op, op} -> operaciones(op, pid)
 	end
   end
   
   
-  def operaciones("1\n") do
+  def operaciones("1\n", pid) do
 	IO.puts ("Buscando rival...\n")
+	send pid, :menu
+	menu(pid)
   end
   
-  def operaciones("2\n") do
+  def operaciones("2\n", pid) do
 	IO.puts ("Mostrando estadisticas...\n")
+	send pid, :menu
+	menu(pid)
   end
   
-  def operaciones("3\n") do
+  def operaciones("3\n", pid) do
 	IO.puts ("Finalizando juego...\n")
-	Process.exit(self(), :normal)
+	send pid, :exit
   end
   
-  def operaciones(_) do
+  def operaciones(_, pid) do
 	IO.puts ("Opcion erronea...\n")
+	send pid, :menu
+	menu(pid)
   end
   
 end
