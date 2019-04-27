@@ -53,6 +53,21 @@ defmodule Jugador do
         vida
     end
 
+    def getNombre({nombre, _, _, _})
+    do
+        nombre
+    end
+
+    def getNivel({_, nivel, _, _})
+    do
+        nivel
+    end
+
+    def getClase({_, _, clase, _})
+    do
+        clase
+    end
+
     def aplicarHechizo({nombrePropio, nivelPropio, clasePropia, vidaPropia}, hechizo, {nombreEnemigo, nivelEnemigo, claseEnemigo, vidaEnemigo})
     do
         # Utilizo un hechizo y devuelvo el par con los datos mios y del enemigo actualizados.
