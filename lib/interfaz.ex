@@ -11,9 +11,18 @@ defmodule Interfaz do
 	IO.puts ("Introduzca 2 para mostrar estadisticas")
 	IO.puts ("Introduzca 3 para finalizar el juego\n")
 	op = IO.gets("")
+	IO.puts ("\n")
 	send pid, {:op, op}
-	:timer.sleep(3);
+	finalizar(op)
+	:timer.sleep(1000);
 	recibir(pid)
+  end
+  
+  def finalizar("3\n") do
+	Process.exit(self(), :normal)
+  end
+  
+  def finalizar(_) do
   end
   
   def menu() do
@@ -34,6 +43,7 @@ defmodule Interfaz do
   
   def operaciones("3\n") do
 	IO.puts ("Finalizando juego...\n")
+	Process.exit(self(), :normal)
   end
   
   def operaciones(_) do
