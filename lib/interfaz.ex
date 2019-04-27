@@ -12,13 +12,14 @@ defmodule Interfaz do
 	
   def recibir(pid) do
 	op = IO.gets("")
-	IO.puts ("\n")
+	IO.puts("")
 	send pid, {:op, op}
 	
 	receive do
 		:menu ->  	IO.puts ("Introduzca 1 para buscar rival")
 					IO.puts ("Introduzca 2 para mostrar estadisticas")
 					IO.puts ("Introduzca 3 para finalizar el juego\n")
+					IO.puts ("((TEMPORAL DE PRUEBA)) 4. Iniciar juego \n")
 					recibir(pid)
 		:exit -> :ok
 	end
@@ -34,9 +35,29 @@ defmodule Interfaz do
   def menu(pid) do
 	receive do
 		{:op, op} -> operaciones(op, pid)
+		{:start, pid} -> IO.puts ("Recibida conexion")
+						 IO.puts ("Usted desea jugar? (S\N)")
+						 juego(op)
+						 menu(pid)
 	end
   end
   
+  def juego() do
+    op = IO.gets("")
+  end
+  
+  def op_juego(S) do
+	IO.puts ("A jugar!")
+  end
+  
+  def op_juego(N) do
+	:ok
+  end
+  
+  def op_juego(_) do
+	IO.puts ("Opcion erronea")
+	juego()
+  end
   
   def operaciones("1\n", pid) do
 	IO.puts ("Buscando rival...\n")
@@ -51,7 +72,12 @@ defmodule Interfaz do
   end
   
   def operaciones("3\n", pid) do
-	IO.puts ("Finalizando juego...\n")
+	IO.puts ("Juego finalizado\n")
+	send pid, :exit
+  end
+  
+  def operaciones("4\n", pid) do
+	IO.puts ("Juego finalizado\n")
 	send pid, :exit
   end
   
