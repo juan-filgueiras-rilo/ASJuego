@@ -1,4 +1,4 @@
-'''
+
 defmodule Interfaz do
 
   def inicio() do
@@ -23,41 +23,45 @@ defmodule Interfaz do
 					IO.puts ("((TEMPORAL DE PRUEBA)) 4. Iniciar juego \n")
 					recibir(pid)
 		:exit -> :ok
+		:play -> IO.puts ("Usted desea jugar? (S o N)")
+				  recibir(pid)
 	end
   end
   
-  def finalizar("3\n") do
-	Process.exit(self(), :normal)
-  end
-  
-  def finalizar(_) do
-  end
-  
   def menu(pid) do
+	:timer.sleep(3000)
+	send self(), {:start, pid}
 	receive do
 		{:op, op} -> operaciones(op, pid)
 		{:start, pid} -> IO.puts ("Recibida conexion")
-						 IO.puts ("Usted desea jugar? (S\N)")
-						 juego(op)
+						 IO.puts ("Usted desea jugar? (S o N)")
+						 juego(pid)
 						 menu(pid)
 	end
   end
   
-  def juego() do
-    op = IO.gets("")
+  def juego(pid) do
+    receive do
+		{:op, op} -> op_juego(op, pid)
+	end
   end
   
-  def op_juego(S) do
+  def op_juego("S\n", _) do
 	IO.puts ("A jugar!")
+	receive	do
+		:end -> IO.puts ("Juego finalizado")
+	end
   end
   
-  def op_juego(N) do
+  def op_juego("N\n", pid) do
+	send pid, :menu
 	:ok
   end
   
-  def op_juego(_) do
+  def op_juego(_, pid) do
 	IO.puts ("Opcion erronea")
-	juego()
+	send pid, :play
+	juego(pid)
   end
   
   def operaciones("1\n", pid) do
@@ -89,4 +93,3 @@ defmodule Interfaz do
   end
   
 end
-'''
