@@ -136,6 +136,7 @@ Peer 1:
     * __:victoria__ El hechizo se pudo lanzar correctamente, y se ganó el combate.
 * __Errores:__
     * __:estadoInvalido__ No estabas en combate.
+    * __:turnoInvalido__ No era tu turno.
 ### UsarHechizoRemoto
 * __Resumen:__ El enemigo utiliza un hechizo con su personaje durante el combate. Ejecutar el hechizo implica que se avance un turno suyo en la simulación.
 * __Argumentos:__
@@ -146,3 +147,4 @@ Peer 1:
     * __:derrota__ El hechizo se pudo lanzar correctamente, y se perdió el combate.
 * __Errores:__
     * __:estadoInvalido__ No estabas en combate.
+    * __:turnoInvalido__ No era el turno del enemigo.

@@ -2,36 +2,7 @@ defmodule GameFacade do
     use GenServer
 
 
-    defp _getHechizoDeEfecto({duracionRestante, hechizo})
-    do
-        hechizo
-    end
 
-    defp _getHechizosDeEfectos([{duracionRestante, hechizo} | efectos], salida)
-    do
-        _getHechizosDeEfectos(efectos, [hechizo | salida])
-    end
-
-    defp _getHechizosDeEfectos([], salida)
-    do
-        salida
-    end
-
-    defp _reducirDuracionesEfectos([], nuevaLista)
-    do
-        nuevaLista
-    end
-
-    defp _reducirDuracionesEfectos([{duracionRestante, hechizo} | hechizos], nuevaLista)
-        when duracionRestante > 1
-    do
-        _reducirDuracionesEfectos(hechizos, [{duracionRestante - 1, hechizo} | nuevaLista])
-    end
-
-    defp _reducirDuracionesEfectos([{1, hechizo} | hechizos], nuevaLista)
-    do
-        _reducirDuracionesEfectos(hechizos, nuevaLista)
-    end
 
     defp _buscarClase(nombre, [clase | clases])
     do
@@ -126,7 +97,7 @@ defmodule GameFacade do
         case gameState do
             {_, _, _, {:fueraCombate}} -> {:reply, :fueraCombate, gameState}
             {_, _, _, {:estableciendo}} -> {:reply, :estableciendo, gameState}
-            {_, _, _, {:combate, _, _, _, _}} -> {:reply, :combate, gameState}
+            {_, _, _, {:combate, _, _}} -> {:reply, :combate, gameState}
             _ -> {:reply, :iniciando, gameState}
         end
     end
@@ -166,45 +137,47 @@ defmodule GameFacade do
 
     # IniciarCombate (ACK)
     @impl true
-    def handle_call({:ackCombate, pid, datosEnemigo}, _from, {callbackIU, clases, jugador, {_}})
+    def handle_call({:ackCombate, pid, datosEnemigo}, _from, {callbackIU, clases, jugador, {estado}})
     do
-        {:reply, {self(), jugador}, {callbackIU, clases, jugador, {:combate, pid, datosEnemigo, [], []}}}
+        #pidCombate = :null;
+        case estado do
+            :estableciendo ->   {:ok, pidCombate} = GestorCombate.iniciar(jugador, datosEnemigo, :turnoEnemigo);
+                                {:reply, {self(), jugador}, {callbackIU, clases, jugador, {:combate, pid, pidCombate}}}
+
+            :fueraCombate ->    {:ok, pidCombate} = GestorCombate.iniciar(jugador, datosEnemigo, :turnoPropio);
+                                {:reply, {self(), jugador}, {callbackIU, clases, jugador, {:combate, pid, pidCombate}}}
+        end
+        
     end
 
     # Retirarse
     @impl true
-    def handle_cast(:retirarse, {callBackIU, clases, jugador, {:combate, _, _, _, _}})
+    def handle_cast(:retirarse, {callBackIU, clases, jugador, {:combate, _, _}})
     do
         {:noreply, {callBackIU, clases, jugador, {:fueraCombate}}}
     end
 
 
     # usarHechizoPropio
-    def handle_call({:hechizoPropio, hechizo}, _from, {callBackIU, clases, jugador, {:combate, pid, datosEnemigo, efectosPropios, efectosEnemigo}})
+    def handle_call({:hechizoPropio, hechizo}, _from, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}})
     do
-        efectosEnemigo = [{Hechizo.getDuracion(hechizo), hechizo} | efectosEnemigo];
-        {jugador, datosEnemigo} = Jugador.aplicarHechizos(jugador, _getHechizosDeEfectos(efectosEnemigo, []), datosEnemigo);
-        efectosEnemigo = _reducirDuracionesEfectos(efectosEnemigo, []);
-
-        case Jugador.getVida(datosEnemigo) do
-            x when x > 0 -> {:reply, :continuar, {callBackIU, clases, jugador, {:combate, pid, datosEnemigo, efectosPropios, efectosEnemigo}}}
-            x when x <= 0 -> {:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}
+        resultado = GestorCombate.usarHechizoPropio(pidCombate, hechizo);
+        case resultado do
+            :continuar -> {:reply, :continuar, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
+            :victoria -> {:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}
+            :turnoInvalido -> {:reply, :turnoInvalido, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
         end
-        
     end
 
     # usarHechizoRemoto
-    def handle_call({:hechizoRemoto, hechizo}, _from, {callBackIU, clases, jugador, {:combate, pid, datosEnemigo, efectosPropios, efectosEnemigo}})
+    def handle_call({:hechizoRemoto, hechizo}, _from, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}})
     do
-        efectosPropios = [{Hechizo.getDuracion(hechizo), hechizo} | efectosPropios];
-        {datosEnemigo, jugador} = Jugador.aplicarHechizos(datosEnemigo, _getHechizosDeEfectos(efectosPropios, []), jugador);
-        efectosPropios = _reducirDuracionesEfectos(efectosPropios, []);
-        
-        case Jugador.getVida(jugador) do
-            x when x > 0 -> {:reply, :continuar, {callBackIU, clases, jugador, {:combate, pid, datosEnemigo, efectosPropios, efectosEnemigo}}}
-            x when x <= 0 -> {:reply, :derrota, {callBackIU, clases, jugador, {:fueraCombate}}}
+        resultado = GestorCombate.usarHechizoRemoto(pidCombate, hechizo);
+        case resultado do
+            :continuar -> {:reply, :continuar, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
+            :derrota -> {:reply, :derrota, {callBackIU, clases, jugador, {:fueraCombate}}}
+            :turnoInvalido -> {:reply, :turnoInvalido, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
         end
-
     end
 
 
