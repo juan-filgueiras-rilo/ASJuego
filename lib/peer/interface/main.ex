@@ -18,6 +18,7 @@ defmodule Main do
             GameFacade.crearJugador(juego, crearJugador(juego));
             GameFacade.guardar(juego, @initial_state.playerData);
         end
+        Interfaz.inicio(juego)
     end
 
     def crearJugador(juego) do
