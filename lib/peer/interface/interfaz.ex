@@ -3,7 +3,7 @@ defmodule Interfaz do
 
   def inicio(data) do
 	mipid = self()
-	pid = spawn(fn -> Interfaz.init(mipid) end)
+	pid = spawn(fn -> Interfaz.init(mipid, data) end)
 	IO.puts ("Hola! Bienvenido a xxxxxxxxxxxx\n")
 	IO.puts ("Introduzca 1 para iniciar un combate:")
 	IO.puts ("Introduzca 2 para ver datos del jugador:")
@@ -35,35 +35,35 @@ defmodule Interfaz do
 	end
   end
   
-  def init(pid) do
+  def init(pid, game) do
   	Peer.registrar()
-	menu(pid)
+		menu(pid, game)
   end
   
-  def menu(pid) do
+  def menu(pid, game) do
 	receive do
-		{:op, op} -> operaciones(op, pid)
+		{:op, op} -> operaciones(op, pid, game)
 		{:start, node} -> IO.puts ("Recibida conexion")
 						  IO.puts ("Usted desea jugar? (S o N)")
-						  inicio_juego(node, pid)
-						  menu(pid)
+						  inicio_juego(node, pid, game)
+						  menu(pid, game)
 	end
   end
   
-  def inicio_juego(node, pid) do
+  def inicio_juego(node, pid, game) do
     receive do
-		{:op, op} -> op_juego(op, node, pid)
+		{:op, op} -> op_juego(op, node, pid, game)
 	end
   end
   
   
   
-  def juego(node, pid) do
+  def juego(node, pid, game) do
 	receive do
 		{:recibe, pid2} -> send pid, :game
-						  juego(node, pid)
-		{:op, op} -> jugada_partida(node, pid, op)
-				     juego(node, pid)
+						  juego(node, pid, game)
+		{:op, op} -> jugada_partida(node, pid, op, game)
+				     juego(node, pid, game)
 		:escapar -> IO.puts ("\n\nEl jugador ha escapado")
 					IO.puts ("Partida finalizada\n\n")
 					send(node, :end)
@@ -71,50 +71,71 @@ defmodule Interfaz do
 	end
   end
   
-  def jugada_partida(node, pid, "1\n") do
+  def jugada_partida(node, pid, "1\n", game) do
 	IO.puts ("Viendo hechizos disponibles...\n");
+	nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
+	Utils.mostrarHechizosDetallados(GameFacade.obtenerHechizosDisponibles(game), nivel, 1)
 	send pid, :game
   end
   
-  def jugada_partida(node, pid, "2\n") do
+  def jugada_partida(node, pid, "2\n", game) do
 	IO.puts ("Viendo datos jugador...\n");
+	Utils.mostrarJugador(GameFacade.obtenerJugador(game),1)
 	send pid, :game
   end
   
-  def jugada_partida(node, pid, "3\n") do
+  def jugada_partida(node, pid, "3\n", game) do
 	IO.puts ("Viendo datos rival...\n");
+	Utils.mostrarJugador(GameFacade.obtenerEnemigo(game), 1)
 	send pid, :game
   end
   
   
-  def jugada_partida(node, pid, "4\n") do
+  def jugada_partida(node, pid, "4\n", game) do
 	IO.puts ("Usando hechizo...\n");
-	IO.puts ("Espere su turno...\n");
+	hechizo = :pepe; #AQUI HABRA QUE CURRARSE UNA FORMA DE ELEGIR UN HECHIZO
+	resultado = GameFacade.usarHechizoPropio(game, hechizo)
+	case resultado do
+		:turnoInvalido -> IO.puts ("Espere su turno...\n");
+		:estadoInvalido -> IO.puts("Error: no estas en combate\n");
+		:victoria -> IO.puts("VICTORIAAA");
+		_ -> IO.puts("Hechizo utilizado!");
+	end
+	
 	send(node, {:recibe, pid}) 
   end
   
-  def jugada_partida(node, pid, "5\n") do
+  def jugada_partida(node, pid, "5\n", game) do
 	IO.puts ("Finalizando partida...\n");
+	GameFacade.retirarse(game);
 	send(node, :escapar)
   end
   
-  def jugada_partida(node, pid, _) do
+  def jugada_partida(node, pid, _, game) do
 	IO.puts ("Opcion erronea..\n");
 	send pid, :game
   end
   
   
 
-  def op_juego("S\n", node, pid) do
+  def op_juego("S\n", node, pid, game) do
 	IO.puts ("\n\nA jugar\n!")
+
 	send(node, :yes) 
 	send pid, :game
-	juego(node, pid)
+	# AQUI SE LE ENVIA LA ORDEN POR RED AL OTRO GAMEFACADE DE INICIAR EL JUEGO, NO SE COMO
+	# O TAMPOCO SE SI NOS ESTAN INICIANDO COMBATE POR FUERA. ASUMO QUE NOS LO INICIAN, Y NOS
+	# MANDAN ESOS DOS DATOS.
+	{enemigo, pidRed} = {:pepe, :pepe}
+	GameFacade.ackCombate(game, pidRed, enemigo)
+
+
+	juego(node, pid, game)
 	send pid, :menu
-	menu(pid)
+	menu(pid, game)
   end
   
-  def op_juego("N\n", node, pid) do
+  def op_juego("N\n", node, pid, game) do
 	info = Process.info(self())
 	{_, name} = List.keyfind(info, :registered_name, 0)
 	send(node, :no) 
@@ -122,13 +143,13 @@ defmodule Interfaz do
 	:ok
   end
   
-  def op_juego(_, node, pid) do
+  def op_juego(_, node, pid, game) do
 	IO.puts ("Opcion erronea")
 	send pid, :play
-	inicio_juego(node, pid)
+	inicio_juego(node, pid, game)
   end
   
-  def operaciones("1\n", pid) do
+  def operaciones("1\n", pid, game) do
 	rivalnode = Peer.buscar_rival()
 	info = Process.info(self())
 	{_, name} = List.keyfind(info, :registered_name, 0)
@@ -136,33 +157,36 @@ defmodule Interfaz do
 	receive do
 		:yes -> IO.puts("\n\nA jugar!")
 					    IO.puts ("Espere su turno...")
-						juego(rivalnode, pid)
+						juego(rivalnode, pid, game)
 		:no -> IO.puts("No jugar")
 	end
 	send pid, :menu
-	menu(pid)
+	menu(pid, game)
   end
   
-  def operaciones("2\n", pid) do
+  def operaciones("2\n", pid, game) do
 	IO.puts ("Mostrando datos...\n")
+	
+	
 	send pid, :menu
-	menu(pid)
+	menu(pid, game)
   end
   
-  def operaciones("3\n", pid) do
+  def operaciones("3\n", pid, game) do
 	IO.puts ("Mostrando clases...\n")
+	Utils.mostrarClases(GameFacade.listarClases(game))
 	send pid, :exit
   end
   
-  def operaciones("4\n", pid) do
+  def operaciones("4\n", pid, game) do
 	IO.puts ("Juego finalizado\n")
 	send pid, :exit
   end
   
-  def operaciones(_, pid) do
+  def operaciones(_, pid, game) do
 	IO.puts ("Opcion erronea...\n")
 	send pid, :menu
-	menu(pid)
+	menu(pid, game)
   end
   
 end

@@ -60,7 +60,16 @@ defmodule Utils do
         :ok
     end
 
-    def mostrarHechizo(hechizo, tabs) do
-        tabs = getTabs(tabs);
+    def mostrarHechizoDetallado(hechizo, nivel, tabs) do
+        tabsString = getTabs(tabs);
+        IO.puts(tabsString <> "Nombre: " <> Kernel.inspect(Hechizo.getNombre(hechizo)))
+        IO.puts(tabsString <> "Tipo: " <> Kernel.inspect(Hechizo.getTipo(hechizo)))
+        IO.puts(tabsString <> "Fuerza: " <> Kernel.inspect(Hechizo.getFuerza(hechizo, nivel)))
+        IO.puts(tabsString <> "Duracion: " <> Kernel.inspect(Hechizo.getDuracion(hechizo)))
+        IO.puts(tabsString <> "Nivel min: " <> Kernel.inspect(Hechizo.getNivelMin(hechizo, nivel)))
+    end
+
+    def mostrarHechizosDetallados(hechizos, nivel, tabs) do
+        hechizos = Enum.map(hechizos, fn x -> mostrarHechizoDetallado(x, nivel, tabs) end);
     end
 end
