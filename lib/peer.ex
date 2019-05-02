@@ -17,7 +17,7 @@ def buscar_rival() do
 	resultado_buscar(GenServer.call({:super,:"super@192.168.43.142"}, :pedir_lista, 5000))
 end
 
-def resultado_buscar({:ok, {list, counter}) do
+def resultado_buscar({:ok, {list, counter}}) do
 	{String.to_atom("#{counter}"), Enum.random(list)}
 end
 

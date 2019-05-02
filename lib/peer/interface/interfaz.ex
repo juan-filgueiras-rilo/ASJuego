@@ -62,7 +62,7 @@ defmodule Interfaz do
   
   def operaciones("1\n", pid) do
 	node = Peer.buscar_rival()
-	send (node, {:start, node}
+	send(node, {:start, node})
 	menu(pid)
   end
   
