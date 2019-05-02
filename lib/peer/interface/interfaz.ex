@@ -24,10 +24,7 @@ defmodule Interfaz do
 
       :exit ->
         :ok
-
-      {:start, node} ->
-        IO.puts("holaaaaaa")
-
+		
       :play ->
         IO.puts("Usted desea jugar? (S o N)")
         recibir(pid)
@@ -86,20 +83,20 @@ defmodule Interfaz do
     end
   end
 
-  def jugada_partida(node, pid, "1\n", game) do
+  def jugada_partida(_, pid, "1\n", game) do
     IO.puts("Viendo hechizos disponibles...\n")
     nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     Utils.mostrarHechizosDetallados(GameFacade.obtenerHechizosDisponibles(game), nivel, 1)
     send(pid, :game)
   end
 
-  def jugada_partida(node, pid, "2\n", game) do
+  def jugada_partida(_, pid, "2\n", game) do
     IO.puts("Viendo datos jugador...\n")
     Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pid, :game)
   end
 
-  def jugada_partida(node, pid, "3\n", game) do
+  def jugada_partida(_, pid, "3\n", game) do
     IO.puts("Viendo datos rival...\n")
     Utils.mostrarJugador(GameFacade.obtenerEnemigo(game), 1)
     send(pid, :game)
@@ -121,13 +118,13 @@ defmodule Interfaz do
     send(node, {:recibe, pid})
   end
 
-  def jugada_partida(node, pid, "5\n", game) do
+  def jugada_partida(node, _, "5\n", game) do
     IO.puts("Finalizando partida...\n")
     GameFacade.retirarse(game)
     send(node, :escapar)
   end
 
-  def jugada_partida(node, pid, _, game) do
+  def jugada_partida(_, pid, _, _) do
     IO.puts("Opcion erronea..\n")
     send(pid, :game)
   end
@@ -148,9 +145,9 @@ defmodule Interfaz do
     menu(pid, game)
   end
 
-  def op_juego("N\n", node, pid, game) do
-    info = Process.info(self())
-    {_, name} = List.keyfind(info, :registered_name, 0)
+  def op_juego("N\n", node, pid, _) do
+    #info = Process.info(self())
+    #{_, name} = List.keyfind(info, :registered_name, 0)
     send(node, :no)
     send(pid, :menu)
     :ok
@@ -195,7 +192,7 @@ defmodule Interfaz do
     send(pid, :exit)
   end
 
-  def operaciones("4\n", pid, game) do
+  def operaciones("4\n", pid, _) do
     IO.puts("Juego finalizado\n")
     send(pid, :exit)
   end

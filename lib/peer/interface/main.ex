@@ -1,4 +1,4 @@
-defmodule Main do
+defmodule Initial do
   @initial_state %{
     playerData: "./data/PlayerData.json",
     gameData: "./data/GameData.json"
