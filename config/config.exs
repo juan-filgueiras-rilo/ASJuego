@@ -32,4 +32,4 @@ use Mix.Config
 require Logger
 
 config :logger,
-    level: :info
+  level: :info
