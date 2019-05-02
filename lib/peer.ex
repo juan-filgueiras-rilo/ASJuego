@@ -1,7 +1,7 @@
 defmodule Peer do
 
 def registrar() do
-	mensaje_registrar(GenServer.call({:super,:"super@192.168.43.142"}, {:registrar,Node.self()}, 5000))
+	mensaje_registrar(GenServer.call({:super,:"super@192.168.43.150"}, {:registrar,Node.self()}, 5000))
 end
 
 def mensaje_registrar({:ok,counter}) do
@@ -14,11 +14,11 @@ def mensaje_registrar(_) do
 end
 
 def buscar_rival() do
-	resultado_buscar(GenServer.call({:super,:"super@192.168.43.142"}, {:pedir_lista, Node.self()}, 5000))
+	resultado_buscar(GenServer.call({:super,:"super@192.168.43.150"}, {:pedir_lista, Node.self()}, 5000))
 end
 
 def resultado_buscar({:ok, list}) do
-{node,counter} = Enum.random(list)
+	{node,counter} = Enum.random(list)
 	{String.to_atom("#{counter}"), node}
 end
 
