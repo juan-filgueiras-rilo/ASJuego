@@ -5,9 +5,10 @@ defmodule Interfaz do
 	mipid = self()
 	pid = spawn(fn -> Interfaz.init(mipid) end)
 	IO.puts ("Hola! Bienvenido a xxxxxxxxxxxx\n")
-	IO.puts ("Introduzca 1 para buscar rival")
-	IO.puts ("Introduzca 2 para mostrar estadisticas")
-	IO.puts ("Introduzca 3 para finalizar el juego\n")
+	IO.puts ("Introduzca 1 para iniciar un combate:")
+	IO.puts ("Introduzca 2 para ver datos del jugador:")
+	IO.puts ("Introduzca 3 para ver datos de las clases:")
+	IO.puts ("Introduzca 4 para finalizar el juego\n")
 	recibir(pid)
   end
 	
@@ -59,12 +60,14 @@ defmodule Interfaz do
   
   def juego(node, pid) do
 	receive do
-		{:recibe, pid2} -> IO.inspect(self()) 
-						send pid, :game
-				juego(node, pid)
-		{:op, op} -> IO.puts ("ESTO LO RECIBE")
-					jugada_partida(node, pid, op)
+		{:recibe, pid2} -> send pid, :game
+						  juego(node, pid)
+		{:op, op} -> jugada_partida(node, pid, op)
 				     juego(node, pid)
+		:escapar -> IO.puts ("\n\nEl jugador ha escapado")
+					IO.puts ("Partida finalizada\n\n")
+					send(node, :end)
+		:end -> :ok				
 	end
   end
   
@@ -86,11 +89,13 @@ defmodule Interfaz do
   
   def jugada_partida(node, pid, "4\n") do
 	IO.puts ("Usando hechizo...\n");
+	IO.puts ("Espere su turno...\n");
 	send(node, {:recibe, pid}) 
   end
   
   def jugada_partida(node, pid, "5\n") do
 	IO.puts ("Finalizando partida...\n");
+	send(node, :escapar)
   end
   
   def jugada_partida(node, pid, _) do
@@ -101,16 +106,18 @@ defmodule Interfaz do
   
 
   def op_juego("S\n", node, pid) do
-	IO.puts ("A jugar!")
+	IO.puts ("\n\nA jugar\n!")
 	send(node, :yes) 
 	send pid, :game
 	juego(node, pid)
+	send pid, :menu
+	menu(pid)
   end
   
   def op_juego("N\n", node, pid) do
 	info = Process.info(self())
 	{_, name} = List.keyfind(info, :registered_name, 0)
-	send(node, {:no, {name, Node.self()}}) 
+	send(node, :no) 
 	send pid, :menu
 	:ok
   end
@@ -127,10 +134,10 @@ defmodule Interfaz do
 	{_, name} = List.keyfind(info, :registered_name, 0)
 	send(rivalnode, {:start, {name, Node.self()}})
 	receive do
-		:yes -> IO.puts("A jugar!")
-					    IO.puts ("Esperando tu turno...")
+		:yes -> IO.puts("\n\nA jugar!")
+					    IO.puts ("Espere su turno...")
 						juego(rivalnode, pid)
-		{:no, node} -> IO.puts("No jugar")
+		:no -> IO.puts("No jugar")
 	end
 	send pid, :menu
 	menu(pid)
