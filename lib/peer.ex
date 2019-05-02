@@ -4,7 +4,8 @@ def registrar() do
 	mensaje_registrar(GenServer.call({:super,:"super@192.168.43.142"}, {:registrar,Node.self()}, 5000))
 end
 
-def mensaje_registrar(:ok) do
+def mensaje_registrar({:ok,counter}) do
+  Process.register(self(),String.to_atom("#{counter}"))
 	IO.puts("Registro satisfatorio")
 end
 
@@ -16,16 +17,17 @@ def buscar_rival() do
 	resultado_buscar(GenServer.call({:super,:"super@192.168.43.142"}, :pedir_lista, 5000))
 end
 
-def resultado_buscar(:ok, lista) do
-	Enum.random(lista)
+def resultado_buscar({:ok, lista}) do
+node =	Enum.random(lista)
+# send({:"1",node},"a")
 end
 
 def resultado_buscar(_) do
 	:error
-end 
+end
 
 def conectarse(pid) do
-	
+
 end
 
 

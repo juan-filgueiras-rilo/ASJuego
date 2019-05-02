@@ -2,7 +2,7 @@ defmodule SuperPeer do
   use GenServer
 
   def init(_) do
-    {:ok, []}
+    {:ok, {[],0}}
   end
 
   def terminate(_, db) do
@@ -13,9 +13,10 @@ defmodule SuperPeer do
     :ok
   end
 
-  def handle_call({:registrar, node}, from, state) do
+  def handle_call({:registrar, node}, from, {list,counter}) do
     IO.inspect(from)
-    {:reply, :ok, [node | state]}
+
+    {:reply, {:ok,counter}, {[node | list],counter+1}}
   end
 
   def handle_call(:pedir_lista, from, state) do
