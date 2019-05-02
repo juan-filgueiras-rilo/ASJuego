@@ -2,6 +2,7 @@
 defmodule Interfaz do
 
   def inicio(data) do
+	Peer.registrar()
 	IO.puts ("Hola! Bienvenido a xxxxxxxxxxxx\n")
 	mipid = self()
 	pid = spawn(fn -> Interfaz.menu(mipid) end)
@@ -13,7 +14,6 @@ defmodule Interfaz do
 	
   def recibir(pid) do
 	op = IO.gets("")
-	IO.puts("")
 	send pid, {:op, op}
 	
 	receive do
@@ -28,11 +28,9 @@ defmodule Interfaz do
   end
   
   def menu(pid) do
-	:timer.sleep(3000)
-	send self(), {:start, pid}
 	receive do
 		{:op, op} -> operaciones(op, pid)
-		{:start, pid} -> IO.puts ("Recibida conexion")
+		{:start, node} -> IO.puts ("Recibida conexion")
 						 IO.puts ("Usted desea jugar? (S o N)")
 						 juego(pid)
 						 menu(pid)
@@ -63,8 +61,8 @@ defmodule Interfaz do
   end
   
   def operaciones("1\n", pid) do
-	IO.puts ("Buscando rival...\n")
-	send pid, :menu
+	node = Peer.buscar_rival()
+	send (node, {:start, node}
 	menu(pid)
   end
   
