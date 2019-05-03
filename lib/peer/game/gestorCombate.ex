@@ -29,7 +29,14 @@ defmodule GestorCombate do
   def init({jugador, enemigo, turno}) do
     {:ok, {jugador, enemigo, turno, [], []}}
   end
-
+  
+  def handle_call(:obtenerEnemigo, _from, {jugador, enemigo, turno, efectosPropios, efectosEnemigo}) do
+	{:reply, {:ok, enemigo}, {jugador, enemigo, turno, efectosPropios, efectosEnemigo}}
+  end
+  
+  
+  
+  
   def handle_call(
         {:hechizoPropio, hechizo},
         _from,
@@ -99,6 +106,12 @@ defmodule GestorCombate do
              is_pid(juego) do
     GenServer.call(juego, {:hechizoPropio, hechizo})
   end
+  
+  def obtenerEnemigo(juego) do  
+	GenServer.call(juego, :obtenerEnemigo)
+  end
+  
+  
 
   def usarHechizoRemoto(juego, hechizo)
       when is_tuple(hechizo) and

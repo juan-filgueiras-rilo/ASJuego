@@ -24,6 +24,14 @@ defmodule GameFacade do
       _ -> {:stop, :errorLoading}
     end
   end
+  
+  
+  
+  def handle_call(:obtenerEnemigo, _from, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}) do
+	{:reply, GestorCombate.obtenerEnemigo(pidCombate), 
+			{callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
+  
+  end
 
   # Crear jugador
   @impl true
@@ -281,6 +289,12 @@ defmodule GameFacade do
         :estadoInvalido
     end
   end
+  
+  
+  def obtenerEnemigo(juego) do
+	GenServer.call(juego, :obtenerEnemigo)
+  end
+
 
   def usarHechizoPropio(juego, hechizo)
       when is_tuple(hechizo) and
