@@ -36,6 +36,9 @@ defmodule Interfaz do
         IO.puts("Introduzca 4 para utilizar hechizo")
         IO.puts("Introduzca 5 para huir del combate\n")
         recibir(pid)
+		
+	  :hechizo -> recibir(pid)
+		
     end
   end
 
@@ -63,9 +66,13 @@ defmodule Interfaz do
     end
   end
 
+
+  #En el recibe tendrá que ejecutar el hechizo remoto
+
   def juego(node, pid, game, rival) do
     receive do
-      {:recibe, pid2} ->
+      {:recibe, hechizo} ->
+		#GameFacade.usarHechizoPropio(game, hechizo)
         send(pid, :game)
         juego(node, pid, game, rival)
 
@@ -106,7 +113,23 @@ defmodule Interfaz do
   end
 
   def jugada_partida(node, pid, "4\n", game, rival) do
-    IO.puts("Usando hechizo...\n")
+  
+      IO.puts("Mostrando hechizos...\n") 
+	
+
+	IO.puts ("1 para hechizo 1")
+	IO.puts ("2 para hechizo 2")
+	IO.puts ("3 para hechizo 3")
+	IO.puts ("4 para hechizo 4")
+	IO.puts ("5 para volver atras")
+                               
+	send pid, :hechizo
+	
+	receive do
+		{:op, op} -> accion_hechizo(op, pid, node)
+	end 
+	
+	
     # AQUI HABRA QUE CURRARSE UNA FORMA DE ELEGIR UN HECHIZO
     #hechizo = :pepe
     #resultado = GameFacade.usarHechizoPropio(game, hechizo)
@@ -122,8 +145,40 @@ defmodule Interfaz do
 	#Añadir metodo GameFacade.userHechizoRemoto (game, hechizo) en el recibe
 	#Enviar hechizo tb
 
-    send(node, {:recibe, pid})
   end
+  
+  
+  
+  def accion_hechizo("1\n", pid, node) do
+	IO.puts ("Ejecutando hechizo 1... \n\n")
+    send(node, {:recibe, hechizo})
+  end 
+  
+  def accion_hechizo("2\n", pid, node) do
+    IO.puts ("Ejecutando hechizo 1... \n\n")
+    send(node, {:recibe, hechizo})
+  end 
+  
+  def accion_hechizo("3\n", pid, node) do
+    IO.puts ("Ejecutando hechizo 1... \n\n")
+    send(node, {:recibe, hechizo})
+  end 
+  
+  def accion_hechizo("4\n", pid, node) do
+    IO.puts ("Ejecutando hechizo 1... \n\n")
+    send(node, {:recibe, hechizo})
+  end 
+  
+  def accion_hechizo("5\n", pid, _) do
+	send pid, :game
+  end 
+  
+  def accion_hechizo("5\n", pid, _) do
+	IO.puts ("Opcion erronea...\n\n")
+	send pid, :game
+  end 
+  
+  
 
   def jugada_partida(node, _, "5\n", game, rival) do
     IO.puts("Finalizando partida...\n")
