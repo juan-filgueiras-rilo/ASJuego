@@ -1,6 +1,38 @@
 defmodule GestorCombate do
   use GenServer
 
+defp _getHechizo({enfriamientoRestante, hechizo})
+    do
+        hechizo
+    end
+
+    defp _getHechizos([{enfriamientoRestante, hechizo} | enfriamiento], salida)
+    do
+        _getHechizos(enfriamiento, [hechizo | salida])
+    end
+
+    defp _getHechizos([], salida)
+    do
+        salida
+    end
+
+    defp _reducirEnfriamiento([], nuevaLista)
+    do  
+        nuevaLista
+    end
+
+    defp _reducirEnfriamiento([{enfriamientoRestante, hechizo} | hechizos], nuevaLista)
+        when enfriamientoRestante > 1
+    do
+        _reducirEnfriamiento(hechizos, [{enfriamientoRestante - 1, hechizo} | nuevaLista])
+    
+    end
+
+    defp _reducirEnfriamiento([{1, hechizo} | hechizos], nuevaLista )
+    do
+        _reducirEnfriamiento(hechizos, nuevaLista)
+    end
+
   defp _getHechizoDeEfecto({duracionRestante, hechizo}) do
     hechizo
   end

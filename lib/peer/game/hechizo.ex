@@ -25,6 +25,11 @@ defmodule Hechizo do
     duracion
   end
 
+  def getEnfriamiento({_, _, _, _, _, _, _, _, enfr})
+    do
+        enfr
+    end
+
   def save({nombre, const, lineal, cuadr, nivelMin, tipo, duracion, descripcion, enfr}) do
     %{
       "nombre" => nombre,
