@@ -13,6 +13,11 @@ defmodule GameFacade do
     :not_found
   end
 
+  def getHechizoDisponible([hechizo])
+    do
+        Enum.filter(Hechizo.getEnfr(hechizo), fn x ->x < 1 end)
+    end
+
   @impl true
   def init({fileNameClases, pidCallback}) do
     try do
