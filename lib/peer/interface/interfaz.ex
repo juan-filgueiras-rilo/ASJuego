@@ -114,69 +114,52 @@ defmodule Interfaz do
 
   def jugada_partida(node, pid, "4\n", game, rival) do
   
-      IO.puts("Mostrando hechizos...\n") 
-	
+    IO.puts("Mostrando hechizos...\n") 
+    hechizos = GameFacade.obtenerHechizosDisponibles(game)
+    Utils.mostrarHechizosDetallados(hechizos, 1);
+    IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
+    IO.puts("Introduzca 0 para volver atras");
 
-	IO.puts ("1 para hechizo 1")
-	IO.puts ("2 para hechizo 2")
-	IO.puts ("3 para hechizo 3")
-	IO.puts ("4 para hechizo 4")
-	IO.puts ("5 para volver atras")
-                               
-	send pid, :hechizo
-	
-	receive do
-		{:op, op} -> accion_hechizo(op, pid, node)
-	end 
-	
-	
-    # AQUI HABRA QUE CURRARSE UNA FORMA DE ELEGIR UN HECHIZO
-    #hechizo = :pepe
-    #resultado = GameFacade.usarHechizoPropio(game, hechizo)
+    hechizo = receive do
+      {:op, "0\n"} -> :volver
+      {:op, op} 
+        when is_binary(op)
+        and op != "0\n"   ->  opcion = Integer.parse(String.replace(op, "\n", ""));
+                              accion_hechizo(opcion, hechizos)
+    end
 
-    #case resultado do
-    #  :turnoInvalido -> IO.puts("Espere su turno...\n")
-    #  :estadoInvalido -> IO.puts("Error: no estas en combate\n")
-    #  :victoria -> IO.puts("VICTORIAAA")
-    #  _ -> IO.puts("Hechizo utilizado!")
-    #end
-	
+    resultado = GameFacade.usarHechizoPropio(game, hechizo)
+
+    case resultado do
+      :turnoInvalido -> IO.puts("Espere su turno...\n")
+      :estadoInvalido -> IO.puts("Error: no estas en combate\n")
+      :victoria -> IO.puts("VICTORIAAA")
+      _ -> IO.puts("Hechizo utilizado!")
+    end
 	
 	#Añadir metodo GameFacade.userHechizoRemoto (game, hechizo) en el recibe
 	#Enviar hechizo tb
 
   end
-  
-  
-  
-  def accion_hechizo("1\n", pid, node) do
-	IO.puts ("Ejecutando hechizo 1... \n\n")
-    send(node, {:recibe, hechizo})
-  end 
-  
-  def accion_hechizo("2\n", pid, node) do
-    IO.puts ("Ejecutando hechizo 1... \n\n")
-    send(node, {:recibe, hechizo})
-  end 
-  
-  def accion_hechizo("3\n", pid, node) do
-    IO.puts ("Ejecutando hechizo 1... \n\n")
-    send(node, {:recibe, hechizo})
-  end 
-  
-  def accion_hechizo("4\n", pid, node) do
-    IO.puts ("Ejecutando hechizo 1... \n\n")
-    send(node, {:recibe, hechizo})
-  end 
-  
-  def accion_hechizo("5\n", pid, _) do
-	send pid, :game
-  end 
-  
-  def accion_hechizo("5\n", pid, _) do
-	IO.puts ("Opcion erronea...\n\n")
-	send pid, :game
-  end 
+
+  def accion_hechizo(1, [h | _])
+  do
+    h
+  end
+
+  def accion_hechizo(numero, [h | hechizos]) 
+    when is_integer(numero)
+    and numero > 1
+  do
+    accion_hechizo(numero - 1, hechizos)
+  end
+
+  def accion_hechizo(numero, [])
+    when is_integer(numero)
+    and numero > 1
+  do
+    :numeroInvalido
+  end
   
   
 
