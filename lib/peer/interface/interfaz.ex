@@ -95,7 +95,7 @@ defmodule Interfaz do
   def jugada_partida(_, pid, "1\n", game, rival) do
     IO.puts("Viendo hechizos disponibles...\n")
     nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
-    Utils.mostrarHechizosDetallados(GameFacade.obtenerHechizosDisponibles(game), nivel, 1)
+    Utils.mostrarHechizosDetallados(GameFacade.getHechizosDisponibles(game), nivel, 1)
     send(pid, :game)
   end
 
@@ -115,7 +115,7 @@ defmodule Interfaz do
   def jugada_partida(node, pid, "4\n", game, rival) do
   
     IO.puts("Mostrando hechizos...\n") 
-    hechizos = GameFacade.obtenerHechizosDisponibles(game)
+    hechizos = GameFacade.getHechizosDisponibles(game)
     Utils.mostrarHechizosDetallados(hechizos, 1);
     IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
     IO.puts("Introduzca 0 para volver atras");

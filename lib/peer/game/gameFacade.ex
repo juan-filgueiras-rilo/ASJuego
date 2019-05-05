@@ -13,10 +13,7 @@ defmodule GameFacade do
     :not_found
   end
 
-  def getHechizoDisponible([hechizo])
-    do
-        Enum.filter(Hechizo.getEnfr(hechizo), fn x ->x < 1 end)
-    end
+
 
   @impl true
   def init({fileNameClases, pidCallback}) do
@@ -198,6 +195,13 @@ defmodule GameFacade do
     end
   end
 
+  def handle_call({:hechizosDisponibles}, _from, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}})
+  do
+    resultado = GestorCombate.getHechizosDisponibles(pidCombate);
+    {:reply, resultado,  {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
+  end
+
+
   def iniciar(fileNameClasses, pidCallback)
       when is_binary(fileNameClasses) and
              is_pid(pidCallback) do
@@ -322,4 +326,16 @@ defmodule GameFacade do
       _ -> :estadoInvalido
     end
   end
+
+  def getHechizosDisponibles(juego)
+    when is_pid(juego)
+  do
+    estado = GenServer.call(juego, :getEstado)
+
+    case estado do
+      :combate -> GenServer.call(juego, {:hechizosDisponibles})
+      _ -> :estadoInvalido
+    end
+  end
+
 end

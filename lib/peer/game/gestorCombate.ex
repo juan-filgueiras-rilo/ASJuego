@@ -1,7 +1,7 @@
 defmodule GestorCombate do
   use GenServer
 
-defp _getHechizo({enfriamientoRestante, hechizo})
+    defp _getHechizo({enfriamientoRestante, hechizo})
     do
         hechizo
     end
@@ -59,11 +59,11 @@ defp _getHechizo({enfriamientoRestante, hechizo})
   end
 
   def init({jugador, enemigo, turno}) do
-    {:ok, {jugador, enemigo, turno, [], []}}
+    {:ok, {jugador, enemigo, turno, [], [], [], []}}
   end
   
-  def handle_call(:obtenerEnemigo, _from, {jugador, enemigo, turno, efectosPropios, efectosEnemigo}) do
-	{:reply, {:ok, enemigo}, {jugador, enemigo, turno, efectosPropios, efectosEnemigo}}
+  def handle_call(:obtenerEnemigo, _from, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}) do
+	{:reply, {:ok, enemigo}, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
   end
   
   
@@ -72,56 +72,79 @@ defp _getHechizo({enfriamientoRestante, hechizo})
   def handle_call(
         {:hechizoPropio, hechizo},
         _from,
-        {jugador, enemigo, turno, efectosPropios, efectosEnemigo}
+        {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}
       ) do
     case turno do
       :turnoPropio ->
-        efectosEnemigo = [{Hechizo.getDuracion(hechizo), hechizo} | efectosEnemigo]
+        if (Enum.any?(enfrPropios, fn {_, x} -> x == hechizo end)) do
+          {:reply, :hechizoEnfriando, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
+        else
+          enfrPropios = _reducirEnfriamiento([{Hechizo.getEnfriamiento(hechizo), hechizo} | enfrPropios], [])
+          efectosEnemigo = [{Hechizo.getDuracion(hechizo), hechizo} | efectosEnemigo]
 
-        {jugador, enemigo} =
-          Jugador.aplicarHechizos(jugador, _getHechizosDeEfectos(efectosEnemigo, []), enemigo)
+          {jugador, enemigo} =
+            Jugador.aplicarHechizos(jugador, _getHechizosDeEfectos(efectosEnemigo, []), enemigo)
 
-        efectosEnemigo = _reducirDuracionesEfectos(efectosEnemigo, [])
+          efectosEnemigo = _reducirDuracionesEfectos(efectosEnemigo, [])
 
-        case Jugador.getVida(enemigo) do
-          x when x > 0 ->
-            {:reply, :continuar,
-             {jugador, enemigo, :turnoEnemigo, efectosPropios, efectosEnemigo}}
+          case Jugador.getVida(enemigo) do
+            x when x > 0 ->
+              {:reply, :continuar,
+              {jugador, enemigo, :turnoEnemigo, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
 
-          x when x <= 0 ->
-            {:stop, {:shutdown, :victoria}, :victoria, {}}
+            x when x <= 0 ->
+              {:stop, {:shutdown, :victoria}, :victoria, {}}
+          end
         end
+        
 
       :turnoEnemigo ->
-        {:reply, :turnoInvalido, {jugador, enemigo, turno, efectosPropios, efectosEnemigo}}
+        {:reply, :turnoInvalido, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
     end
   end
 
   def handle_call(
         {:hechizoRemoto, hechizo},
         _from,
-        {jugador, enemigo, turno, efectosPropios, efectosEnemigo}
+        {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}
       ) do
     case turno do
       :turnoEnemigo ->
-        efectosPropios = [{Hechizo.getDuracion(hechizo), hechizo} | efectosPropios]
+        if (Enum.any?(enfrEnemigos, fn {_, x} -> x == hechizo end)) do
+          {:reply, :hechizoEnfriando, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
+        else
+          enfrEnemigos = _reducirEnfriamiento([{Hechizo.getEnfriamiento(hechizo), hechizo} | enfrEnemigos], [])
+          efectosPropios = [{Hechizo.getDuracion(hechizo), hechizo} | efectosPropios]
 
-        {enemigo, jugador} =
-          Jugador.aplicarHechizos(enemigo, _getHechizosDeEfectos(efectosPropios, []), jugador)
+          {enemigo, jugador} =
+            Jugador.aplicarHechizos(enemigo, _getHechizosDeEfectos(efectosPropios, []), jugador)
 
-        efectosPropios = _reducirDuracionesEfectos(efectosPropios, [])
+          efectosPropios = _reducirDuracionesEfectos(efectosPropios, [])
 
-        case Jugador.getVida(jugador) do
-          x when x > 0 ->
-            {:reply, :continuar, {jugador, enemigo, :turnoPropio, efectosPropios, efectosEnemigo}}
+          case Jugador.getVida(jugador) do
+            x when x > 0 ->
+              {:reply, :continuar, {jugador, enemigo, :turnoPropio, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
 
-          x when x <= 0 ->
-            {:stop, {:shutdown, :derrota}, :derrota, {}}
+            x when x <= 0 ->
+              {:stop, {:shutdown, :derrota}, :derrota, {}}
+          end
         end
 
       :turnoPropio ->
-        {:reply, :turnoInvalido, {jugador, enemigo, turno, efectosPropios, efectosEnemigo}}
+        {:reply, :turnoInvalido, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
     end
+  end
+
+  def handle_call({:hechizosDisponibles}, _from, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigo})
+  do
+    hechizos = Clase.getHechizosDisponibles(Jugador.getClase(jugador), Jugador.getNivel(jugador));
+
+    hechizosDisponibles = 
+      Enum.filter(hechizos, fn x -> not Enum.any?(enfrPropios, fn {_,b} -> b == x end) end);
+
+    {:reply, hechizosDisponibles, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigo}}
+
+
   end
 
   def terminate(_, _) do
@@ -150,4 +173,11 @@ defp _getHechizo({enfriamientoRestante, hechizo})
              is_pid(juego) do
     GenServer.call(juego, {:hechizoRemoto, hechizo})
   end
+
+  def getHechizosDisponibles(juego)
+    when is_pid(juego)
+  do
+    GenServer.call(juego, {:hechizosDisponibles});    
+  end
+
 end
