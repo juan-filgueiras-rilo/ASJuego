@@ -36,6 +36,7 @@ defmodule Interfaz do
         IO.puts("Introduzca 4 para utilizar hechizo")
         IO.puts("Introduzca 5 para huir del combate\n")
         recibir(pid)
+	   
 		
 	  :hechizo -> recibir(pid)
 		
@@ -100,7 +101,7 @@ defmodule Interfaz do
   end
 
   def jugada_partida(_, pid, "2\n", game, rival) do
-    IO.puts("Viendo datos jugador...\n")
+    IO.puts("Viendo dnivel = Jugador.getNivel(GameFacade.obtenerJugador(game))atos jugador...\n")
     Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pid, :game)
   end
@@ -115,31 +116,60 @@ defmodule Interfaz do
   def jugada_partida(node, pid, "4\n", game, rival) do
   
     IO.puts("Mostrando hechizos...\n") 
+	nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     hechizos = GameFacade.getHechizosDisponibles(game)
-    Utils.mostrarHechizosDetallados(hechizos, 1);
-    IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
+    Utils.mostrarHechizosDetallados(hechizos, nivel, 1);
+    #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
     IO.puts("Introduzca 0 para volver atras");
-
-    hechizo = receive do
-      {:op, "0\n"} -> :volver
+	
+	send pid, :hechizo
+	
+	receive do
+      {:op, "0\n"} -> send pid, :game
       {:op, op} 
         when is_binary(op)
-        and op != "0\n"   ->  opcion = Integer.parse(String.replace(op, "\n", ""));
-                              accion_hechizo(opcion, hechizos)
+        and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
+                              hechizo = accion_hechizo(opcion, hechizos)
+							  IO.puts ("VAMOOOOS\n")
+							  resultado = GameFacade.usarHechizoPropio(game, hechizo)
+
+							  case resultado do
+							    :turnoInvalido -> IO.puts("Espere su turno...\n")
+							    :estadoInvalido -> IO.puts("Error: no estas en combate\n")
+							    :victoria -> IO.puts("VICTORIAAA")
+							    _ -> IO.puts("Hechizo utilizado!")
+							  end
     end
 
-    resultado = GameFacade.usarHechizoPropio(game, hechizo)
-
-    case resultado do
-      :turnoInvalido -> IO.puts("Espere su turno...\n")
-      :estadoInvalido -> IO.puts("Error: no estas en combate\n")
-      :victoria -> IO.puts("VICTORIAAA")
-      _ -> IO.puts("Hechizo utilizado!")
-    end
 	
 	#Añadir metodo GameFacade.userHechizoRemoto (game, hechizo) en el recibe
 	#Enviar hechizo tb
 
+  end
+  
+  
+  def recibir_ataque(pid, hechizos, game) do
+	  receive do
+		  {:op, "0\n"} -> send pid, :game
+		  {:op, op} 
+			when is_binary(op)
+			and op != "0\n"   ->  
+								  opcion = Integer.parse(String.replace(op, "\n", ""));
+								  hechizo = accion_hechizo(opcion, hechizos)
+								  resultado = GameFacade.usarHechizoPropio(game, hechizo)
+
+								  case resultado do
+									:turnoInvalido -> IO.puts("Espere su turno...\n")
+									:estadoInvalido -> IO.puts("Error: no estas en combate\n")
+									:victoria -> IO.puts("VICTORIAAA")
+									_ -> IO.puts("Hechizo utilizado!")
+								  end
+			{:op, op} -> 
+				IO.puts ("Opcion erronea...\n")
+				IO.puts("Introduzca 0 para volver atras");
+				send pid, :hechizo
+				recibir_ataque(pid, hechizos, game)		
+		end
   end
 
   def accion_hechizo(1, [h | _])

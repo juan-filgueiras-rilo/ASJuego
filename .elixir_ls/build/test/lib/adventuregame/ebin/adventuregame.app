@@ -1,9 +1,0 @@
-{application,adventuregame,
-             [{applications,[kernel,stdlib,elixir,logger,json]},
-              {description,"adventuregame"},
-              {modules,['Elixir.Clase','Elixir.GameFacade','Elixir.Guardable',
-                        'Elixir.Hechizo','Elixir.Interfaz','Elixir.Jugador',
-                        'Elixir.Main','Elixir.Peer','Elixir.SuperPeer',
-                        'Elixir.Utils']},
-              {registered,[]},
-              {vsn,"0.1.0"}]}.

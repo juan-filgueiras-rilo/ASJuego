@@ -61,7 +61,11 @@ defmodule Utils do
     IO.puts(tabsString <> "Tipo: " <> Kernel.inspect(Hechizo.getTipo(hechizo)))
     IO.puts(tabsString <> "Fuerza: " <> Kernel.inspect(Hechizo.getFuerza(hechizo, nivel)))
     IO.puts(tabsString <> "Duracion: " <> Kernel.inspect(Hechizo.getDuracion(hechizo)))
-    IO.puts(tabsString <> "Nivel min: " <> Kernel.inspect(Hechizo.getNivelMin(hechizo, nivel)))
+    #IO.puts(tabsString <> "Nivel min: " <> Kernel.inspect(Hechizo.getNivelMin(hechizo, nivel)))
+	
+	IO.puts("\n");
+	
+	##Añadi un \n al final, borralo cuando funcione el ultimo print y añadeselo a el
   end
 
   def mostrarHechizosDetallados(hechizos, nivel, tabs) do
