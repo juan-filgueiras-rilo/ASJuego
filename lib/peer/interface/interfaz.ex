@@ -73,7 +73,7 @@ defmodule Interfaz do
   def juego(node, pid, game, rival) do
     receive do
       {:recibe, hechizo} ->
-		#GameFacade.usarHechizoPropio(game, hechizo)
+		GameFacade.usarHechizoRemoto(game, hechizo)
         send(pid, :game)
         juego(node, pid, game, rival)
 
@@ -101,7 +101,6 @@ defmodule Interfaz do
   end
 
   def jugada_partida(_, pid, "2\n", game, rival) do
-    IO.puts("Viendo dnivel = Jugador.getNivel(GameFacade.obtenerJugador(game))atos jugador...\n")
     Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pid, :game)
   end
@@ -130,19 +129,21 @@ defmodule Interfaz do
         when is_binary(op)
         and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
                               hechizo = accion_hechizo(opcion, hechizos)
-							  IO.puts ("VAMOOOOS\n")
 							  resultado = GameFacade.usarHechizoPropio(game, hechizo)
 
 							  case resultado do
 							    :turnoInvalido -> IO.puts("Espere su turno...\n")
 							    :estadoInvalido -> IO.puts("Error: no estas en combate\n")
 							    :victoria -> IO.puts("VICTORIAAA")
-							    _ -> IO.puts("Hechizo utilizado!")
+							    _ ->  IO.puts("Hechizo utilizado!")
+								      IO.puts("Espere su turno...\n")
+									  send(node, {:recibe, hechizo})
 							  end
     end
 
 	
-	#Añadir metodo GameFacade.userHechizoRemoto (game, hechizo) en el recibe
+	#Añadir metodo GameFacade.userHechizoRemoto (game, hechizo) en el recibeS
+
 	#Enviar hechizo tb
 
   end
@@ -163,6 +164,7 @@ defmodule Interfaz do
 									:estadoInvalido -> IO.puts("Error: no estas en combate\n")
 									:victoria -> IO.puts("VICTORIAAA")
 									_ -> IO.puts("Hechizo utilizado!")
+										 IO.puts("Espere su turno...\n")
 								  end
 			{:op, op} -> 
 				IO.puts ("Opcion erronea...\n")
@@ -210,11 +212,10 @@ defmodule Interfaz do
   def op_juego("S\n", node, pid, game, {borrar, enemydata}) do
     IO.puts("\n\nA jugar\n!")
 
-    send(node, :yes)
+    send(node, {:yes, game})
     send(pid, :game)
 	
-	
-    {enemigo, pidRed} = {:pepe, :pepe}
+
     {borrar2, rival} = GameFacade.ackCombate(game, self(), enemydata)
     
 	juego(node, pid, game, rival)
@@ -243,7 +244,7 @@ defmodule Interfaz do
     send(rivalnode, {:start, {name, Node.self()}, GameFacade.synCombate(game)})
 
     receive do
-      :yes ->
+      {:yes, rivaldata} ->
         IO.puts("\n\nA jugar!")
         IO.puts("Espere su turno...")
         juego(rivalnode, pid, game, "agua")
