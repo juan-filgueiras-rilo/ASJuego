@@ -211,12 +211,13 @@ defmodule Interfaz do
 
   def op_juego("S\n", node, pid, game, {borrar, enemydata}) do
     IO.puts("\n\nA jugar\n!")
+	
+	
+    {borrar2, rival} = GameFacade.ackCombate(game, self(), enemydata)
 
-    send(node, {:yes, game})
+    send(node, {:yes, rival})
     send(pid, :game)
 	
-
-    {borrar2, rival} = GameFacade.ackCombate(game, self(), enemydata)
     
 	juego(node, pid, game, rival)
     send(pid, :menu)
@@ -245,9 +246,10 @@ defmodule Interfaz do
 
     receive do
       {:yes, rivaldata} ->
+	    {borrar2, rival} = GameFacade.ackCombate(game, self(), rivaldata)
         IO.puts("\n\nA jugar!")
         IO.puts("Espere su turno...")
-        juego(rivalnode, pid, game, "agua")
+        juego(rivalnode, pid, game, rival)
 
       :no ->
         IO.puts("No jugar")
