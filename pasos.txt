@@ -1,0 +1,7 @@
+#SuperPeer
+    iex.bat --name super@192.168.43.142 --cookie chocolate -S mix
+    #Por ahora esa ip es necesaria -> Red movil de Ishwara
+-> SuperPeer.fundar()
+#Peer
+    iex.bat --name #{CualquierNombre}@#{TuIp} --cookie chocolate -S mix
+-> 

@@ -24,7 +24,7 @@ defmodule Interfaz do
 
       :exit ->
         :ok
-		
+
       :play ->
         IO.puts("Usted desea jugar? (S o N)")
         recibir(pid)
@@ -36,10 +36,10 @@ defmodule Interfaz do
         IO.puts("Introduzca 4 para utilizar hechizo")
         IO.puts("Introduzca 5 para huir del combate\n")
         recibir(pid)
-	   
-		
+
+
 	  :hechizo -> recibir(pid)
-		
+
     end
   end
 
@@ -113,19 +113,19 @@ defmodule Interfaz do
   end
 
   def jugada_partida(node, pid, "4\n", game, rival) do
-  
-    IO.puts("Mostrando hechizos...\n") 
+
+    IO.puts("Mostrando hechizos...\n")
 	nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     hechizos = GameFacade.getHechizosDisponibles(game)
     Utils.mostrarHechizosDetallados(hechizos, nivel, 1);
     #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
     IO.puts("Introduzca 0 para volver atras");
-	
+
 	send pid, :hechizo
-	
+
 	receive do
       {:op, "0\n"} -> send pid, :game
-      {:op, op} 
+      {:op, op}
         when is_binary(op)
         and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
                               hechizo = accion_hechizo(opcion, hechizos)
@@ -141,20 +141,20 @@ defmodule Interfaz do
 							  end
     end
 
-	
+
 	#Añadir metodo GameFacade.userHechizoRemoto (game, hechizo) en el recibeS
 
 	#Enviar hechizo tb
 
   end
-  
-  
+
+
   def recibir_ataque(pid, hechizos, game) do
 	  receive do
 		  {:op, "0\n"} -> send pid, :game
-		  {:op, op} 
+		  {:op, op}
 			when is_binary(op)
-			and op != "0\n"   ->  
+			and op != "0\n"   ->
 								  opcion = Integer.parse(String.replace(op, "\n", ""));
 								  hechizo = accion_hechizo(opcion, hechizos)
 								  resultado = GameFacade.usarHechizoPropio(game, hechizo)
@@ -166,11 +166,11 @@ defmodule Interfaz do
 									_ -> IO.puts("Hechizo utilizado!")
 										 IO.puts("Espere su turno...\n")
 								  end
-			{:op, op} -> 
+			{:op, op} ->
 				IO.puts ("Opcion erronea...\n")
 				IO.puts("Introduzca 0 para volver atras");
 				send pid, :hechizo
-				recibir_ataque(pid, hechizos, game)		
+				recibir_ataque(pid, hechizos, game)
 		end
   end
 
@@ -179,7 +179,7 @@ defmodule Interfaz do
     h
   end
 
-  def accion_hechizo(numero, [h | hechizos]) 
+  def accion_hechizo(numero, [h | hechizos])
     when is_integer(numero)
     and numero > 1
   do
@@ -192,8 +192,8 @@ defmodule Interfaz do
   do
     :numeroInvalido
   end
-  
-  
+
+
 
   def jugada_partida(node, _, "5\n", game, rival) do
     IO.puts("Finalizando partida...\n")
@@ -214,10 +214,10 @@ defmodule Interfaz do
 
     send(node, {:yes, game})
     send(pid, :game)
-	
+
 
     {borrar2, rival} = GameFacade.ackCombate(game, self(), enemydata)
-    
+
 	juego(node, pid, game, rival)
     send(pid, :menu)
     menu(pid, game)
