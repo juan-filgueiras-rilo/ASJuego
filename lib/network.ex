@@ -275,7 +275,7 @@ defmodule Network do
       Node.start(String.to_atom("peer@0.0.0.0"));
       Node.set_cookie(:chocolate);
       {_status, pid} = GenServer.start(Network, :ok)
-      spawn(fn -> initReceiverLoop() end)
+      #spawn(fn -> initReceiverLoop() end)
       pid
     rescue
       _ -> IO.puts("Error lanzando modulo de red");
