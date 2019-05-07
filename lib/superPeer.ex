@@ -1,6 +1,90 @@
 defmodule SuperPeer do
   use GenServer
 
+  defmodule SuperPeerAutodetection do
+    defmodule Listener do
+      def init(pidCallback, socket) do
+        loop(pidCallback, socket)
+      end
+
+      defp loop(pidCallback, socket) do
+        {data, client} = socket |> Socket.Datagram.recv!()
+        {:ok, list} = :inet.getif()
+        list = list |> Enum.map(fn {x, _, _} -> x end)
+
+        {client, _port} = client
+
+        case data do
+          "PEER" -> 
+            if list |> Enum.all?(fn x -> x != client end) do
+              IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
+              {a, b, c, d} = client;
+              client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
+              GenServer.call(pidCallback, {:registrar, client})
+            end
+          "SUPERPEER" -> 
+            if list |> Enum.all?(fn x -> x != client end) do
+              IO.puts("ENCONTRADO SUPERPEER EN: " <> Kernel.inspect(client));
+              
+              # Registrar superpeer
+            end
+          _ -> :ok;
+        end
+        loop(pidCallback, socket)
+      end
+    end
+
+    defmodule Beacon do
+      def init(socketsList) do
+        loop(socketsList)
+      end
+
+      defp loop(socketsList) do
+        announce(socketsList)
+
+        receive do
+          :stop -> :ok
+        after
+          10000 -> loop(socketsList)
+        end
+      end
+
+      defp announce(socketsList) do
+        socketsList
+        |> Enum.map(fn {socket, broadcast} ->
+          Socket.Datagram.send!(socket, "SUPERPEER", {{255, 255, 255, 255}, 8000})
+        end)
+      end
+    end
+
+    def init(pidCallback) do
+      try do
+        {:ok, listenSocket} =
+          Socket.UDP.open(8000, [{:broadcast, true}, {:local, [{:address, {0, 0, 0, 0}}]}])
+
+        {:ok, interfaces} = :inet.getif()
+
+        sendSocketsList =
+          interfaces
+          |> Enum.map(fn {ip, broadcast, _} ->
+            {:ok, socket} =
+              Socket.UDP.open(10000, [{:broadcast, true}, {:local, [{:address, ip}]}])
+
+            {
+              socket,
+              broadcast
+            }
+          end)
+
+        listener = spawn(fn -> Listener.init(pidCallback, listenSocket) end)
+        beacon = spawn(fn -> Beacon.init(sendSocketsList) end)
+      rescue
+        x -> IO.puts("Imposible cargar sistema de autodeteccion: " <> Kernel.inspect(x))
+      end
+    end
+  end
+
+
   defmodule SocketNetworking do
     def init(pid_master) do
       socket = Socket.TCP.listen!(8000)

@@ -40,13 +40,23 @@ defmodule Network do
 
         {client, _port} = client
 
-        if list |> Enum.all?(fn x -> x != client end) do
-          IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
-          {a, b, c, d} = client
-          client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}")
-          Network.add_peer(pidCallback, client)
+        case data do
+          "PEER" -> 
+            if list |> Enum.all?(fn x -> x != client end) do
+              IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
+              {a, b, c, d} = client;
+              client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
+              Network.add_peer(pidCallback, client)
+            end
+          "SUPERPEER" -> 
+            if list |> Enum.all?(fn x -> x != client end) do
+              IO.puts("ENCONTRADO SUPERPEER EN: " <> Kernel.inspect(client));
+              {a, b, c, d} = client;
+              client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
+              Network.add_superpeer(pidCallback, client)
+            end
+          _ -> :ok;
         end
-
         loop(pidCallback, socket)
       end
     end
@@ -226,14 +236,13 @@ defmodule Network do
 
   def handle_call({:add_peer, peer}, _from, {superPeers, peers, death_manager}) do
     if length(peers) < 50 do
-      IO.inspect("Inserting new Peer")
+      
 
       if !Enum.any?(peers, fn x -> Monitor.get(x) == peer end) do
-        IO.puts("new")
+        IO.puts("Añadiendo superpeer: " <> Kernel.inspect(peer))
 
         {:reply, :ok, {superPeers, [Monitor.init(peer, death_manager) | peers], death_manager}}
       else
-        IO.puts("repeated")
 
         {:reply, :ok, {superPeers, peers, death_manager}}
       end
@@ -243,8 +252,35 @@ defmodule Network do
   end
 
   def handle_call({:remove_peer, peer}, _from, {superPeers, peers, death_manager}) do
+    IO.puts("Eliminando peer: " <> Kernel.inspect(Monitor.get(peer)));
     peers =
       peers
+      |> Enum.filter(fn x -> x != Monitor.get(peer) end)
+
+    {:reply, :ok, {superPeers, peers, death_manager}}
+  end
+
+  def handle_call({:add_superpeer, peer}, _from, {superPeers, peers, death_manager}) do
+    if length(superPeers) < 50 do
+      
+
+      if !Enum.any?(superPeers, fn x -> Monitor.get(x) == peer end) do
+        IO.puts("Añadiendo superpeer: " <> Kernel.inspect(peer))
+
+        {:reply, :ok, {[Monitor.init(peer, death_manager) | superPeers], peers, death_manager}}
+      else
+
+        {:reply, :ok, {superPeers, peers, death_manager}}
+      end
+    else
+      {:reply, :no, {superPeers, peers, death_manager}}
+    end
+  end
+  
+  def handle_call({:remove_superpeer, peer}, _from, {superPeers, peers, death_manager}) do
+    IO.puts("Eliminando superpeer: " <> Kernel.inspect(Monitor.get(peer)));
+    superPeers =
+      superPeers
       |> Enum.filter(fn x -> x != Monitor.get(peer) end)
 
     {:reply, :ok, {superPeers, peers, death_manager}}
@@ -273,11 +309,17 @@ defmodule Network do
     {:reply, {:ok, superPeers}, {superPeers, peers, death_manager}}
   end
 
-  # Gestionar Peers
-  # Lista de superPeers statica
-  # estado = lista de peers
-  # MOnitorizar estado
-  # Inicializar con llamada a superPEER
+
+  def add_superpeer(pid_network, pid) 
+  do
+    GenServer.call(pid_network, {:add_superpeer, pid})
+  end
+
+  def remove_superpeer(pid_network, pid)
+  do
+    GenServer.call(pid_network, {:remove_superpeer, pid})
+  end
+
   def add_peer(pid_network, pid) do
     GenServer.call(pid_network, {:add_peer, pid})
   end
