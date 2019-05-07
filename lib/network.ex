@@ -7,21 +7,22 @@ defmodule Network do
         loop(pidCallback, socket)
       end
 
+      defp loop(pidCallback, socket) do
+        {data, client} = socket |> Socket.Datagram.recv!()
+        {:ok, list} = :inet.getif()
+        list = list |> Enum.map(fn {x, _, _} -> x end)
 
-      defp loop(pidCallback, socket)
-      do
-        {data,client} = socket |> Socket.Datagram.recv!;
-        {:ok, list} = :inet.getif();
-        list = list |> Enum.map(fn {x, _, _} -> x end);
-
-        IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client));
-        {client, _port} = client;
-        if (list |> Enum.all?(fn x -> x != client end)) do
-          {a,b,c,d} = client;
-          client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
-          IO.inspect(client);
-          IO.puts("CLIENTE");
-          Network.add_peer(pidCallback, client);
+        {client, _port} = client
+        IO.inspect(client)
+        IO.puts("Lista")
+        IO.inspect(list)
+        if list |> Enum.all?(fn x -> x != client end) do
+IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
+          {a, b, c, d} = client
+          client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}")
+          IO.inspect(client)
+          IO.puts("CLIENTE")
+          Network.add_peer(pidCallback, client)
         end
         loop(pidCallback, socket)
       end
@@ -107,13 +108,12 @@ defmodule Network do
                 IO.inspect("what!")
                 []
             end
-            |> IO.inspect()
             |> Enum.random()
-            |> IO.inspect()
+
             # Esto deberia ser el pid de un momitor
 
             |> Monitor.get()
-            |> IO.inspect()
+
             # Pedimos Lista a  Random SuperPeer
 
             |> SuperPeer.pedir_lista()
@@ -223,7 +223,7 @@ defmodule Network do
     one_peer =
       peers
       |> Enum.random()
-      |> Monitor.get()
+      |> Monitor.get()  
 
     send({:peer, one_peer}, {:want_to_connect, Node.self()})
 
@@ -264,22 +264,20 @@ defmodule Network do
   end
 
   def initialize() do
+    try do
+      Node.disconnect(Node.self())
+    rescue
+      _ -> :ok
+    end
 
     try do
-      Node.disconnect(Node.self());
-    rescue
-      _ -> :ok;
-    end
-    try do
-      Node.start(String.to_atom("peer@0.0.0.0"));
-      Node.set_cookie(:chocolate);
+      Node.start(String.to_atom("peer@0.0.0.0"))
+      Node.set_cookie(:chocolate)
       {_status, pid} = GenServer.start(Network, :ok)
-      #spawn(fn -> initReceiverLoop() end)
+      # spawn(fn -> initReceiverLoop() end)
       pid
     rescue
-      _ -> IO.puts("Error lanzando modulo de red");
+      _ -> IO.puts("Error lanzando modulo de red")
     end
-
   end
-
 end
