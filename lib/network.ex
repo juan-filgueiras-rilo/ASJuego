@@ -13,17 +13,14 @@ defmodule Network do
         list = list |> Enum.map(fn {x, _, _} -> x end)
 
         {client, _port} = client
-        IO.inspect(client)
-        IO.puts("Lista")
-        IO.inspect(list)
+
         if list |> Enum.all?(fn x -> x != client end) do
-IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
+          IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
           {a, b, c, d} = client
           client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}")
-          IO.inspect(client)
-          IO.puts("CLIENTE")
           Network.add_peer(pidCallback, client)
         end
+
         loop(pidCallback, socket)
       end
     end
@@ -45,28 +42,30 @@ IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
 
       defp announce(socketsList) do
         socketsList
-        |> IO.inspect
         |> Enum.map(fn {socket, broadcast} ->
-          Socket.Datagram.send!(socket, "PEER", {{255,255,255,255}, 8000})
-        end);
-
+          Socket.Datagram.send!(socket, "PEER", {{255, 255, 255, 255}, 8000})
+        end)
       end
     end
 
     def init(pidCallback) do
-
       try do
-        {:ok, listenSocket} = Socket.UDP.open(8000, [{:broadcast, true}, {:local, [{:address, {0,0,0,0}}]}])
-        {:ok, interfaces} = :inet.getif();
-        sendSocketsList = interfaces
-        |> IO.inspect
-        |> Enum.map(fn {ip, broadcast, _} ->
-          {:ok, socket} = Socket.UDP.open(10000, [{:broadcast, true}, {:local, [{:address, ip}]}]);
-          {
-            socket,
-            broadcast
-          }
-        end );
+        {:ok, listenSocket} =
+          Socket.UDP.open(8000, [{:broadcast, true}, {:local, [{:address, {0, 0, 0, 0}}]}])
+
+        {:ok, interfaces} = :inet.getif()
+
+        sendSocketsList =
+          interfaces
+          |> Enum.map(fn {ip, broadcast, _} ->
+            {:ok, socket} =
+              Socket.UDP.open(10000, [{:broadcast, true}, {:local, [{:address, ip}]}])
+
+            {
+              socket,
+              broadcast
+            }
+          end)
 
         listener = spawn(fn -> Listener.init(pidCallback, listenSocket) end)
         beacon = spawn(fn -> Beacon.init(sendSocketsList) end)
@@ -83,22 +82,18 @@ IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
     end
 
     defp initloop(master_pid) do
-      IO.inspect("Init Super Loop")
-
       case Network.get_superpeers(master_pid) do
         {:ok, superpeers} ->
           superpeers
           |> Enum.map(fn x -> Monitor.get(x) end)
           |> Enum.map(fn x -> SuperPeer.registrar(x) end)
 
-          loop(master_pid)
-
         _ ->
-          IO.inspect("WHAT")
-          loop(master_pid)
+          :ok
       end
 
-      []
+      loop(master_pid)
+
       # TOdos los Nodos de los superPeers
     end
 
@@ -108,8 +103,6 @@ IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
           :ok
       after
         4000 ->
-          IO.puts("Looping on SuperPeerManager")
-
           count =
             Network.get_peer_count(master_pid)
             |> IO.inspect()
@@ -184,7 +177,6 @@ IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
 
     super_list =
       init_superpeers(super_death_manager)
-      |> IO.inspect()
 
     # Necesario en estado si queremeos managear SuperPeers
     superPeerManager = SuperPeerManager.init(self())
