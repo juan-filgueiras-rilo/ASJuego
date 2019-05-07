@@ -37,7 +37,7 @@ defmodule Network do
 
       defp announce(socket)
       do
-        Socket.Datagram.send!(socket, Kernel.inspect(Node.self()), {{255,255,255,255}, 8000})
+        Socket.Datagram.send!(socket, "PEER", {{255,255,255,255}, 8000})
       end
 
     end
@@ -265,6 +265,7 @@ defmodule Network do
   end
 
   def initialize() do
+    Node.start(String.to_atom("peer@0.0.0.0"));
     {_status, pid} = GenServer.start(Network, :ok)
     spawn(fn -> initReceiverLoop() end)
     pid
