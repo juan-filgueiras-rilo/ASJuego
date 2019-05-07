@@ -9,6 +9,8 @@ defmodule SuperPeer do
     defp loop(pid_network) do
       receive do
         {:dead, who} ->
+          IO.inspect("Who dead")
+          IO.inspect(who)
           SuperPeer.borrar(pid_network, who)
           loop(pid_network)
       end
@@ -27,27 +29,34 @@ defmodule SuperPeer do
     GenServer.start(__MODULE__, :ok, name: :super)
   end
 
-  def handle_call({:registrar}, {node, _reference}, {list, death_manager}) do
+  def handle_call({:registrar, node}, {_, reference}, {list, death_manager}) do
+    monitored_pid = Monitor.init(node, death_manager)
+
+    {:reply, :ok, {[monitored_pid | list], death_manager}}
+  end
+
+  def handle_call({:pedir_lista, node}, {_who, _reference}, {list, death_manager}) do
+    IO.inspect("Lista Pedida")
     IO.inspect(node)
-    Monitor.init(node, death_manager)
-    {:reply, :ok, {[node | list], death_manager}}
+    #Filtramos los que no son la persona pedida
+    filterdList =
+      list
+      |> Enum.map(fn x -> Monitor.get(x) end)
+      |> Enum.filter(fn x -> x != node end)
+
+    {:reply, filterdList, {list, death_manager}}
   end
 
-  def handle_call({:pedir_lista}, {node, _reference}, {list, death_manager}) do
-    filterdList = Enum.filter(list, fn x -> x != node end)
-    {:reply, {:ok, filterdList}, {list, death_manager}}
-  end
-
-  def handle_call({:delete_node, node}, {_who, _reference}, {list, death_manager}) do
-    {:reply, {:ok}, {Enum.filter(list, fn x -> x != node end), death_manager}}
+  def handle_call({:delete_node, monitor_pid}, {_who, _reference}, {list, death_manager}) do
+    {:reply, {:ok}, {Enum.filter(list, fn x -> x != monitor_pid end), death_manager}}
   end
 
   def pedir_lista(willyrex) do
-    GenServer.call(willyrex, {:pedir_lista})
+    GenServer.call({:super, willyrex}, {:pedir_lista, Node.self()})
   end
 
   def registrar(willyrex) do
-    GenServer.call(willyrex, {:registrar})
+    GenServer.call({:super, willyrex}, {:registrar, Node.self()})
   end
 
   def borrar(willyrex, who) do

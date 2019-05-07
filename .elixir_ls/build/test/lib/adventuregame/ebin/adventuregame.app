@@ -6,6 +6,7 @@
                         'Elixir.Hechizo','Elixir.Initial','Elixir.Interfaz',
                         'Elixir.Jugador','Elixir.MAIN','Elixir.Monitor',
                         'Elixir.Network','Elixir.Network.DeathManager',
+                        'Elixir.Network.SuperDeathManager',
                         'Elixir.Network.SuperPeerManager','Elixir.SuperPeer',
                         'Elixir.SuperPeer.DeathManager','Elixir.Utils']},
               {registered,[]},

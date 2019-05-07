@@ -1,48 +1,53 @@
 defmodule Monitor do
-  def init(pid, master_pid) do
-    spawn(fn -> loop(pid, master_pid) end)
+  def init(node, master_pid) do
+    spawn(fn -> loop(node, master_pid) end)
   end
 
   def get(monitor_pid) do
     send(monitor_pid, {:get_pid, self()})
 
     receive do
-      {:ok, pid} ->
-        pid
+      {:ok, node} ->
+        node
 
       _ ->
-        :error
-    after
-      1000 ->
         :error
 
         # code
     end
   end
 
-  defp loop(pid, master_pid) do
+  defp loop(node, master_pid) do
     receive do
       {:stop} ->
         :ok
 
       {:get_pid, pid_to_reply} ->
-        send(pid_to_reply, {:ok, pid})
+ 
+        send(pid_to_reply, {:ok, node})
+        loop(node,master_pid)
     after
-      1000 ->
-        case check(pid) do
+      10000 ->
+        a = check(node)
+
+        case a do
           :dead ->
-            send(master_pid, {:dead, pid})
+            send(master_pid, {:dead, self()})
 
           :alive ->
-            loop(pid, master_pid)
+            loop(node, master_pid)
         end
 
         # code
     end
   end
 
-  defp check(pid) do
-    case Node.ping(pid) do
+  defp check(node) do
+    IO.inspect(node)
+    IO.puts("Checking from ")
+    IO.inspect(Node.self())
+
+    case Node.ping(node) do
       :pang ->
         :dead
 

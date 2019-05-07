@@ -2,22 +2,66 @@ defmodule Network do
   use GenServer
 
   defmodule SuperPeerManager do
-    def init(pid, master_pid) do
-      spawn(fn -> loop(pid, master_pid) end)
+    def init(master_pid) do
+      spawn(fn -> initloop(master_pid) end)
     end
 
-    defp loop(_pid, master_pid) do
+    defp initloop(master_pid) do
+      IO.inspect("Init Super Loop")
+
+      case Network.get_superpeers(master_pid) do
+        {:ok, superpeers} ->
+          superpeers
+          |> Enum.map(fn x -> Monitor.get(x) end)
+          |> Enum.map(fn x -> SuperPeer.registrar(x) end)
+
+          loop(master_pid)
+
+        _ ->
+          IO.inspect("WHAT")
+          loop(master_pid)
+      end
+
+      []
+      # TOdos los Nodos de los superPeers
+    end
+
+    defp loop(master_pid) do
       receive do
         {:stop} ->
           :ok
       after
-        10000 ->
-          if Network.get_peer_count(master_pid) < 20 do
-            superPeer_List = Network.get_superpeers(master_pid)
+        4000 ->
+          IO.puts("Looping on SuperPeerManager")
 
-            Enum.random(superPeer_List)
+          count =
+            Network.get_peer_count(master_pid)
+            |> IO.inspect()
+
+          if count < 20 do
+            case Network.get_superpeers(master_pid) do
+              {:ok, superpeers} ->
+                IO.puts("WORKING")
+                superpeers
+
+              _ ->
+                IO.inspect("what!")
+                []
+            end
+            |> IO.inspect()
+            |> Enum.random()
+            |> IO.inspect()
+            # Esto deberia ser el pid de un momitor
+
+            |> Monitor.get()
+            |> IO.inspect()
+            # Pedimos Lista a  Random SuperPeer
+
             |> SuperPeer.pedir_lista()
+            # Acutalizamos Nuestra Lista con nuevos peers
             |> Enum.map(fn x -> Network.add_peer(master_pid, x) end)
+
+            loop(master_pid)
           end
 
           :ok
@@ -48,27 +92,67 @@ defmodule Network do
     end
   end
 
+  defmodule SuperDeathManager do
+    def init(pid_network) do
+      spawn(fn -> loop(pid_network) end)
+    end
+
+    defp loop(pid_network) do
+      receive do
+        {:dead, who} ->
+          # Network.remove_peer(pid_network, who)
+          loop(pid_network)
+      end
+    end
+  end
+
   # State = {:ListaSuperPeers, peers}
   def init(_) do
     death_manager = DeathManager.init(self())
-    {:ok, {init_superpeers(), [], death_manager}}
+    # register_to_superpeer()
+    super_death_manager = SuperDeathManager.init(self())
+
+    super_list =
+      init_superpeers(super_death_manager)
+      |> IO.inspect()
+
+    superPeerManager = SuperPeerManager.init(self())
+
+    # super_list
+    # |> Enum.random()
+    # |> Monitor.get()
+    # |> SuperPeer.registrar()
+
+    {:ok, {super_list, [], death_manager}}
   end
 
-  defp init_superpeers() do
+  defp init_superpeers(super_death_manager) do
     # Read config
     path = "./data/SuperPeers.json"
 
     {:ok, jsonSuperPeers} = File.read(path)
+
     {:ok, jsonSuperPeers} = JSON.decode(jsonSuperPeers)
 
-    jsonSuperPeers['superpeers']
-    
-    |> Enum.map(fn x -> Monitor.init(String.to_atom("super@" <> "#{x}"), self()) end)
+    jsonSuperPeers["superpeers"]
+    |> Enum.map(fn x -> x["ip"] end)
+    |> Enum.map(fn x -> Monitor.init(String.to_atom("super@" <> "#{x}"), super_death_manager) end)
   end
 
   def handle_call({:add_peer, peer}, _from, {superPeers, peers, death_manager}) do
     if length(peers) < 50 do
-      {:reply, :ok, {superPeers, [Monitor.init(peer, death_manager) | peers], death_manager}}
+      IO.inspect("Inserting new Peer")
+      IO.inspect(peer)
+
+      if !Enum.any?(peers, fn x -> Monitor.get(x) == peer end) do
+        IO.puts("new")
+
+        {:reply, :ok, {superPeers, [Monitor.init(peer, death_manager) | peers], death_manager}}
+      else
+        IO.puts("repeated")
+
+        {:reply, :ok, {superPeers, peers, death_manager}}
+      end
     else
       {:reply, :no, {superPeers, peers, death_manager}}
     end
@@ -87,7 +171,10 @@ defmodule Network do
   end
 
   def handle_call(:get_peer, _from, {superPeers, peers, death_manager}) do
-    one_peer = peers |> Enum.random()
+    one_peer =
+      peers
+      |> Enum.random()
+      |> Monitor.get()
 
     {:reply, one_peer, {superPeers, peers, death_manager}}
   end
@@ -97,7 +184,9 @@ defmodule Network do
   end
 
   def handle_call(:get_superPeers, _from, {superPeers, peers, death_manager}) do
-    {:reply, superPeers, {superPeers, peers, death_manager}}
+    IO.puts("Replying the impossible")
+    IO.inspect(superPeers)
+    {:reply, {:ok, superPeers}, {superPeers, peers, death_manager}}
   end
 
   # Gestionar Peers
@@ -122,6 +211,8 @@ defmodule Network do
   end
 
   def get_superpeers(pid_network) do
+    IO.inspect("trying the impossible")
+    IO.inspect(pid_network)
     GenServer.call(pid_network, :get_superPeers)
   end
 
