@@ -1,6 +1,7 @@
 defmodule Network do
   use GenServer
 
+  # Manages the state of the superPeers
   defmodule SuperPeerManager do
     def init(master_pid) do
       spawn(fn -> initloop(master_pid) end)
@@ -65,19 +66,11 @@ defmodule Network do
           end
 
           :ok
-
-          # case check(pid) do
-          #   :dead ->
-          #     send(master_pid, {:dead, self()})
-
-          #   :alive ->
-          #     loop(pid, master_pid)
       end
-
-      # code
     end
   end
 
+  # Removes Peers when detects death
   defmodule DeathManager do
     def init(pid_network) do
       spawn(fn -> loop(pid_network) end)
@@ -92,6 +85,7 @@ defmodule Network do
     end
   end
 
+  # Removes SuperPeers when detects death
   defmodule SuperDeathManager do
     def init(pid_network) do
       spawn(fn -> loop(pid_network) end)
@@ -101,12 +95,13 @@ defmodule Network do
       receive do
         {:dead, who} ->
           # Network.remove_peer(pid_network, who)
+          # Faltaria funcionalidad de anadir/eliminar superPeers
           loop(pid_network)
       end
     end
   end
 
-  # State = {:ListaSuperPeers, peers}
+  # Loop de
   def init(_) do
     death_manager = DeathManager.init(self())
     # register_to_superpeer()
@@ -116,12 +111,8 @@ defmodule Network do
       init_superpeers(super_death_manager)
       |> IO.inspect()
 
+      #Necesario en estado si queremeos managear SuperPeers
     superPeerManager = SuperPeerManager.init(self())
-
-    # super_list
-    # |> Enum.random()
-    # |> Monitor.get()
-    # |> SuperPeer.registrar()
 
     {:ok, {super_list, [], death_manager}}
   end
