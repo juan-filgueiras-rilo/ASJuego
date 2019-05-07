@@ -23,7 +23,7 @@ defmodule Monitor do
         :ok
 
       {:get_pid, pid_to_reply} ->
- 
+
         send(pid_to_reply, {:ok, node})
         loop(node,master_pid)
     after
@@ -43,9 +43,7 @@ defmodule Monitor do
   end
 
   defp check(node) do
-    IO.inspect(node)
-    IO.puts("Checking from ")
-    IO.inspect(Node.self())
+
 
     case Node.ping(node) do
       :pang ->

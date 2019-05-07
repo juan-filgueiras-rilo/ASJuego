@@ -3,54 +3,51 @@ defmodule Network do
 
   defmodule PeerAutodetection do
     defmodule Listener do
-      def init(pidCallback, socket)
-      do
+      def init(pidCallback, socket) do
         loop(pidCallback, socket)
       end
 
-      defp loop(pidCallback, socket)
-      do
-        {data,client} = socket |> Socket.Datagram.recv!;
-        {client, _port} = client;
-        {a,b,c,d} = client;
+      defp loop(pidCallback, socket) do
+        {data, client} = socket |> Socket.Datagram.recv!()
+        {client, _port} = client
+        {a, b, c, d} = client
         client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}")
-        Network.add_peer(pidCallback, client);
+        IO.inspect(client)
+        IO.puts("CLIENTE")
+        Network.add_peer(pidCallback, client)
         loop(pidCallback, socket)
       end
-
     end
-    
+
     defmodule Beacon do
-      def init(socket)
-      do
+      def init(socket) do
         loop(socket)
       end
 
-      defp loop(socket)
-      do
-        announce(socket);
+      defp loop(socket) do
+        announce(socket)
+
         receive do
           :stop -> :ok
-          after 10000 -> loop(socket)
+        after
+          10000 -> loop(socket)
         end
       end
 
-      defp announce(socket)
-      do
-        Socket.Datagram.send!(socket, "PEER", {{255,255,255,255}, 8000})
+      defp announce(socket) do
+        Socket.Datagram.send!(socket, "PEER", {{255, 255, 255, 255}, 8000})
       end
-
     end
 
     def init(pidCallback) do
       try do
-        {:ok, socket} = Socket.UDP.open(8000, [{:broadcast, true}]);
-        listener = spawn(fn -> Listener.init(pidCallback, socket) end);
-        beacon = spawn(fn -> Beacon.init(socket) end);
+        {:ok, socket} = Socket.UDP.open(8000, [{:broadcast, true}])
+        IO.inspect(socket)
+        listener = spawn(fn -> Listener.init(pidCallback, socket) end)
+        beacon = spawn(fn -> Beacon.init(socket) end)
       rescue
-        _ -> IO.puts("Imposible cargar sistema de autodeteccion");
+        _ -> IO.puts("Imposible cargar sistema de autodeteccion")
       end
-      
     end
   end
 
@@ -156,7 +153,7 @@ defmodule Network do
 
   # Loop de
   def init(_) do
-    PeerAutodetection.init(self());
+    PeerAutodetection.init(self())
     death_manager = DeathManager.init(self())
     # register_to_superpeer()
     super_death_manager = SuperDeathManager.init(self())
@@ -187,7 +184,6 @@ defmodule Network do
   def handle_call({:add_peer, peer}, _from, {superPeers, peers, death_manager}) do
     if length(peers) < 50 do
       IO.inspect("Inserting new Peer")
-      IO.inspect(peer)
 
       if !Enum.any?(peers, fn x -> Monitor.get(x) == peer end) do
         IO.puts("new")
@@ -220,9 +216,8 @@ defmodule Network do
       peers
       |> Enum.random()
       |> Monitor.get()
-      send({:peer,one_peer},{:want_to_connect,Node.self})
 
-
+    send({:peer, one_peer}, {:want_to_connect, Node.self()})
 
     {:reply, {:peer, one_peer}, {superPeers, peers, death_manager}}
   end
@@ -232,8 +227,6 @@ defmodule Network do
   end
 
   def handle_call(:get_superPeers, _from, {superPeers, peers, death_manager}) do
-    IO.puts("Replying the impossible")
-    IO.inspect(superPeers)
     {:reply, {:ok, superPeers}, {superPeers, peers, death_manager}}
   end
 
@@ -259,30 +252,29 @@ defmodule Network do
   end
 
   def get_superpeers(pid_network) do
-    IO.inspect("trying the impossible")
-    IO.inspect(pid_network)
     GenServer.call(pid_network, :get_superPeers)
   end
 
   def initialize() do
-    Node.start(String.to_atom("peer@0.0.0.0"));
+    # try do
+    #   Node.disconnect(Node.self())
+    # rescue
+    #   _ ->
+    #     :ok
+    # end
+
+    Node.start(String.to_atom("peer@0.0.0.0"))
+    |> IO.inspect()
+
+    IO.puts("THATS MY NODE")
+
+    Node.self()
+    |> IO.inspect()
+
+    Node.set_cookie(:chocolate)
     {_status, pid} = GenServer.start(Network, :ok)
-    spawn(fn -> initReceiverLoop() end)
     pid
   end
 
-  def initReceiverLoop() do
-    Process.register(self(), :peer)
-    receiverLoop()
-  end
 
-  def receiverLoop() do
-    IO.puts("LOOPER")
-
-    receive do
-      _ ->
-        IO.puts("aaaaaa")
-        receiverLoop()
-    end
-  end
 end
