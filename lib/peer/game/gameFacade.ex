@@ -87,7 +87,13 @@ defmodule GameFacade do
   # GetJugador
   @impl true
   def handle_call(:getJugador, _from, {callbackIU, clases, jugador, combate}) do
-    {:reply, jugador, {callbackIU, clases, jugador, combate}}
+    case combate do
+      {:combate, _, pidCombate} -> {:reply, GestorCombate.obtenerJugador(pidCombate), {callbackIU, clases, jugador, combate}}
+      _ -> {:reply, jugador, {callbackIU, clases, jugador, combate}}
+
+
+    end
+    
   end
 
   @impl true

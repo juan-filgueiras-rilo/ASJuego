@@ -147,6 +147,11 @@ defmodule GestorCombate do
 
   end
 
+  def handle_call({:getJugador}, _from, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigo})
+  do
+    {:reply, jugador, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigo}}
+  end
+
   def terminate(_, _) do
     # :D
     :normal
@@ -178,6 +183,12 @@ defmodule GestorCombate do
     when is_pid(juego)
   do
     GenServer.call(juego, {:hechizosDisponibles});    
+  end
+
+  def obtenerJugador(juego)
+    when is_pid(juego)
+  do
+    GenServer.call(juego, {:getJugador});
   end
 
 end
