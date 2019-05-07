@@ -1,14 +1,14 @@
 defmodule Monitor do
-  def init(node, master_pid) do
-    spawn(fn -> loop(node, master_pid) end)
+  def init(ip_addr, master_pid) do
+    spawn(fn -> loop(ip_addr, master_pid) end)
   end
 
   def get(monitor_pid) do
     send(monitor_pid, {:get_pid, self()})
 
     receive do
-      {:ok, node} ->
-        node
+      {:ok, ip_addr} ->
+        ip_addr
 
       _ ->
         :error
@@ -17,35 +17,39 @@ defmodule Monitor do
     end
   end
 
-  defp loop(node, master_pid) do
+  defp loop(ip_addr, master_pid) do
     receive do
       {:stop} ->
         :ok
 
       {:get_pid, pid_to_reply} ->
-
-        send(pid_to_reply, {:ok, node})
-        loop(node,master_pid)
+        send(pid_to_reply, {:ok, ip_addr})
+        loop(ip_addr, master_pid)
     after
       10000 ->
-        a = check(node)
+        a = check(ip_addr)
 
         case a do
           :dead ->
             send(master_pid, {:dead, self()})
 
           :alive ->
-            loop(node, master_pid)
+            loop(ip_addr, master_pid)
         end
 
         # code
     end
   end
 
-  defp check(node) do
+  defp check(ip_addr) do
+    {ip, _port} = ip_addr
+    {:ok, json} = JSON.encode(%{"function" => "status"})
 
-
-    case Node.ping(node) do
+    socket =
+      Socket.TCP.connect({ip, 8000})
+      |> Socket.Stream.send!(json)
+    Socket.Stream.
+    case ip_addr.ping(ip_addr) do
       :pang ->
         :dead
 

@@ -11,6 +11,7 @@
                         'Elixir.Network.PeerAutodetection.Listener',
                         'Elixir.Network.SuperDeathManager',
                         'Elixir.Network.SuperPeerManager','Elixir.SuperPeer',
-                        'Elixir.SuperPeer.DeathManager','Elixir.Utils']},
+                        'Elixir.SuperPeer.DeathManager',
+                        'Elixir.SuperPeer.SocketNetworking','Elixir.Utils']},
               {registered,[]},
               {vsn,"0.1.0"}]}.
