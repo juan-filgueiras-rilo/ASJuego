@@ -307,7 +307,12 @@ defmodule GameFacade do
   
   
   def obtenerEnemigo(juego) do
-	GenServer.call(juego, :obtenerEnemigo)
+    try do
+      {:ok, enemigo} = GenServer.call(juego, :obtenerEnemigo)
+      enemigo
+    rescue
+      _ -> :error
+    end
   end
 
 
