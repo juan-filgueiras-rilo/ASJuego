@@ -1,6 +1,32 @@
 defmodule Network do
   use GenServer
 
+  defmodule SocketNetworking do
+    def init(pid_master) do
+      socket = Socket.TCP.listen!(8000)
+      spawn(fn -> loop(pid_master, socket) end)
+    end
+
+    def loop(pid_master, socket) do
+      client = socket |> Socket.accept!()
+      spawn(fn -> handle_client(client) end)
+      loop(pid_master, socket)
+    end
+
+    def handle_client(client) do
+      {data, address} = Socket.Stream.recv(client)
+      {:ok, jsonOptions} = JSON.decode(data)
+
+      case jsonOptions["function"] do
+        "status" ->
+          {:ok, json} = JSON.encode(%{"result" => "ok"})
+          Socket.Stream.send!(client, json)
+      end
+
+      Socket.Stream.close!(client)
+    end
+  end
+
   defmodule PeerAutodetection do
     defmodule Listener do
       def init(pidCallback, socket) do
@@ -97,6 +123,28 @@ defmodule Network do
       # TOdos los Nodos de los superPeers
     end
 
+    defp queryList(master_pid) do
+      
+      
+      case Network.get_superpeers(master_pid) do
+        {:ok, superpeers} 
+          when is_list(superpeers)
+          and superpeers != []->
+          
+          #IO.puts("WORKING")
+          peerList = superpeers |> Enum.random()
+          |> Monitor.get()
+          |> SuperPeer.pedir_lista()
+          case peerList do
+            :error -> :error
+            list -> Enum.map(list, fn x -> Network.add_peer(master_pid, x) end)
+          end 
+        _ ->
+          #IO.inspect("what!")
+          :ok
+      end
+    end
+
     defp loop(master_pid) do
       receive do
         {:stop} ->
@@ -105,30 +153,9 @@ defmodule Network do
         4000 ->
           count =
             Network.get_peer_count(master_pid)
-            |> IO.inspect()
 
           if count < 20 do
-            case Network.get_superpeers(master_pid) do
-              {:ok, superpeers} ->
-                IO.puts("WORKING")
-                superpeers
-
-              _ ->
-                IO.inspect("what!")
-                []
-            end
-            |> Enum.random()
-
-            # Esto deberia ser el pid de un momitor
-
-            |> Monitor.get()
-
-            # Pedimos Lista a  Random SuperPeer
-
-            |> SuperPeer.pedir_lista()
-            # Acutalizamos Nuestra Lista con nuevos peers
-            |> Enum.map(fn x -> Network.add_peer(master_pid, x) end)
-
+            queryList(master_pid);
             loop(master_pid)
           end
 
@@ -170,8 +197,9 @@ defmodule Network do
 
   # Loop de
   def init(_) do
-    PeerAutodetection.init(self())
-    death_manager = DeathManager.init(self())
+    SocketNetworking.init(self());
+    PeerAutodetection.init(self());
+    death_manager = DeathManager.init(self());
     # register_to_superpeer()
     super_death_manager = SuperDeathManager.init(self())
 
@@ -189,7 +217,6 @@ defmodule Network do
     path = "./data/SuperPeers.json"
 
     {:ok, jsonSuperPeers} = File.read(path)
-
     {:ok, jsonSuperPeers} = JSON.decode(jsonSuperPeers)
 
     jsonSuperPeers["superpeers"]
@@ -273,16 +300,7 @@ defmodule Network do
 
   def initialize() do
     try do
-      Node.disconnect(Node.self())
-    rescue
-      _ -> :ok
-    end
-
-    try do
-      Node.start(String.to_atom("peer@0.0.0.0"))
-      Node.set_cookie(:chocolate)
       {_status, pid} = GenServer.start(Network, :ok)
-      # spawn(fn -> initReceiverLoop() end)
       pid
     rescue
       _ -> IO.puts("Error lanzando modulo de red")

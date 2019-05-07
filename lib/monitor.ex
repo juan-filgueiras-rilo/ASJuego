@@ -42,19 +42,23 @@ defmodule Monitor do
   end
 
   defp check(ip_addr) do
-    {ip, _port} = ip_addr
-    {:ok, json} = JSON.encode(%{"function" => "status"})
+    try do
+      {ip, _port} = ip_addr
+      {:ok, json} = JSON.encode(%{"function" => "status"})
 
-    socket =
-      Socket.TCP.connect({ip, 8000})
-      |> Socket.Stream.send!(json)
-    Socket.Stream.
-    case ip_addr.ping(ip_addr) do
-      :pang ->
-        :dead
+      socket =
+        Socket.TCP.connect({ip, 8000})
+        |> Socket.Stream.send!(json);
+      Socket.Stream.send(socket,json);
 
-      :pong ->
-        :alive
+      {:ok, json} = Socket.Stream.recv(socket);
+      case json["result"] do
+        "ok" ->
+          :alive
+        _ -> :dead
+      end
+    rescue
+      _ -> :dead
     end
   end
 end

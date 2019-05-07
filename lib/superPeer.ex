@@ -100,13 +100,49 @@ defmodule SuperPeer do
   end
 
   def pedir_lista(willyrex) do
-    GenServer.call({:super, willyrex}, {:pedir_lista, Node.self()})
+    try do
+      addr = {willyrex, 8000};
+      socket = Socket.TCP.connect!(addr);
+
+      {:ok, msg} = JSON.encode(%{
+        "function" => "pedir_lista"
+      });
+      Socket.Stream.send!(socket, msg);
+
+      {:ok, answer} = JSON.decode(Socket.Stream.recv!(socket));
+      case answer["result"] do
+        "error" -> :error
+        list -> list
+      end
+    rescue
+      _ -> :error
+    end
   end
 
   def registrar(willyrex) do
-    GenServer.call({:super, willyrex}, {:registrar, Node.self()})
+    try do
+      addr = {willyrex, 8000};
+      socket = Socket.TCP.connect!(addr);
+
+      {:ok, msg} = JSON.encode(%{
+        "function" => "register"
+      });
+      Socket.Stream.send!(socket, msg);
+
+      {:ok, answer} = JSON.decode(Socket.Stream.recv!(socket));
+      case answer["result"] do
+        "ok" -> :ok
+        "error" -> :error
+      end
+    rescue
+      _ -> :error
+    end
+    
   end
 
+  @doc """
+    Elimina un superpeer de la lista. Solo puede ser llamado localmente.
+  """
   def borrar(willyrex, who) do
     GenServer.call(willyrex, {:delete_node, who})
   end
