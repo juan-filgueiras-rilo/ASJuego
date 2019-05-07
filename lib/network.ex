@@ -111,7 +111,7 @@ defmodule Network do
       init_superpeers(super_death_manager)
       |> IO.inspect()
 
-      #Necesario en estado si queremeos managear SuperPeers
+    # Necesario en estado si queremeos managear SuperPeers
     superPeerManager = SuperPeerManager.init(self())
 
     {:ok, {super_list, [], death_manager}}
@@ -166,8 +166,11 @@ defmodule Network do
       peers
       |> Enum.random()
       |> Monitor.get()
+      send({:peer,one_peer},{:want_to_connect,Node.self})
 
-    {:reply, one_peer, {superPeers, peers, death_manager}}
+
+
+    {:reply, {:peer, one_peer}, {superPeers, peers, death_manager}}
   end
 
   def handle_call(:count, _from, {superPeers, peers, death_manager}) do
@@ -208,6 +211,23 @@ defmodule Network do
   end
 
   def initialize() do
-    GenServer.start(Network, :ok)
+    {_status, pid} = GenServer.start(Network, :ok)
+    spawn(fn -> initReceiverLoop() end)
+    pid
+  end
+
+  def initReceiverLoop() do
+    Process.register(self(), :peer)
+    receiverLoop()
+  end
+
+  def receiverLoop() do
+    IO.puts("LOOPER")
+
+    receive do
+      _ ->
+        IO.puts("aaaaaa")
+        receiverLoop()
+    end
   end
 end
