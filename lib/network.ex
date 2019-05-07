@@ -29,33 +29,49 @@ IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
     end
 
     defmodule Beacon do
-      def init(socket) do
-        loop(socket)
+      def init(socketsList) do
+        loop(socketsList)
       end
 
-      defp loop(socket) do
-        announce(socket)
+      defp loop(socketsList) do
+        announce(socketsList)
 
         receive do
           :stop -> :ok
         after
-          10000 -> loop(socket)
+          10000 -> loop(socketsList)
         end
       end
 
-      defp announce(socket) do
-        Socket.Datagram.send!(socket, "PEER", {{255, 255, 255, 255}, 8000})
+      defp announce(socketsList) do
+        socketsList 
+        |> IO.inspect
+        |> Enum.map(fn {socket, broadcast} -> 
+          Socket.Datagram.send!(socket, "PEER", {broadcast, 8000})
+        end);
+        
       end
     end
 
     def init(pidCallback) do
+      
       try do
-        {:ok, socket} = Socket.UDP.open(8000, [{:broadcast, true}])
-        IO.inspect(socket)
-        listener = spawn(fn -> Listener.init(pidCallback, socket) end)
-        beacon = spawn(fn -> Beacon.init(socket) end)
+        {:ok, listenSocket} = Socket.UDP.open(8000, [{:broadcast, true}, {:local, [{:address, {0,0,0,0}}]}])
+        {:ok, interfaces} = :inet.getif();
+        sendSocketsList = interfaces
+        |> IO.inspect 
+        |> Enum.map(fn {ip, broadcast, _} ->
+          {:ok, socket} = Socket.UDP.open(10000, [{:broadcast, true}, {:local, [{:address, ip}]}]);
+          {
+            socket,
+            broadcast
+          }
+        end );
+
+        listener = spawn(fn -> Listener.init(pidCallback, listenSocket) end)
+        beacon = spawn(fn -> Beacon.init(sendSocketsList) end)
       rescue
-        _ -> IO.puts("Imposible cargar sistema de autodeteccion")
+        x -> IO.puts("Imposible cargar sistema de autodeteccion: " <> Kernel.inspect(x))
       end
     end
   end
