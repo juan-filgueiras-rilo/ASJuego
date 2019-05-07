@@ -7,10 +7,19 @@ defmodule Network do
         loop(pidCallback, socket)
       end
 
+<<<<<<< HEAD
       defp loop(pidCallback, socket) do
         {data, client} = socket |> Socket.Datagram.recv!()
         {client, _port} = client
         {a, b, c, d} = client
+=======
+      defp loop(pidCallback, socket)
+      do
+        {data,client} = socket |> Socket.Datagram.recv!;
+        IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client));
+        {client, _port} = client;
+        {a,b,c,d} = client;
+>>>>>>> 95402a941a0860e4afcf0f6ad5b967f2a05237af
         client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}")
         IO.inspect(client)
         IO.puts("CLIENTE")
@@ -256,6 +265,7 @@ defmodule Network do
   end
 
   def initialize() do
+<<<<<<< HEAD
     # try do
     #   Node.disconnect(Node.self())
     # rescue
@@ -277,4 +287,38 @@ defmodule Network do
   end
 
 
+=======
+    try do
+      Node.disconnect(Node.self());
+    rescue
+      _ -> :ok;
+    end
+    try do
+      Node.start(String.to_atom("peer@0.0.0.0"));
+      Node.set_cookie(:chocolate);
+      {_status, pid} = GenServer.start(Network, :ok)
+      #spawn(fn -> initReceiverLoop() end)
+      pid
+    rescue
+      _ -> IO.puts("Error lanzando modulo de red");
+    end
+    
+  end
+'''
+  def initReceiverLoop() do
+    #Process.register(self(), :peer)
+    receiverLoop()
+  end
+
+  def receiverLoop() do
+    IO.puts("LOOPER")
+
+    receive do
+      _ ->
+        IO.puts("aaaaaa")
+        receiverLoop()
+    end
+  end
+'''
+>>>>>>> 95402a941a0860e4afcf0f6ad5b967f2a05237af
 end
