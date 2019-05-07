@@ -1,6 +1,59 @@
 defmodule Network do
   use GenServer
 
+  defmodule PeerAutodetection do
+    defmodule Listener do
+      def init(pidCallback, socket)
+      do
+        loop(pidCallback, socket)
+      end
+
+      defp loop(pidCallback, socket)
+      do
+        {data,client} = socket |> Socket.Datagram.recv!;
+        {client, _port} = client;
+        {a,b,c,d} = client;
+        client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}")
+        Network.add_peer(pidCallback, client);
+        loop(pidCallback, socket)
+      end
+
+    end
+    
+    defmodule Beacon do
+      def init(socket)
+      do
+        loop(socket)
+      end
+
+      defp loop(socket)
+      do
+        announce(socket);
+        receive do
+          :stop -> :ok
+          after 10000 -> loop(socket)
+        end
+      end
+
+      defp announce(socket)
+      do
+        Socket.Datagram.send!(socket, Kernel.inspect(Node.self()), {{255,255,255,255}, 8000})
+      end
+
+    end
+
+    def init(pidCallback) do
+      try do
+        {:ok, socket} = Socket.UDP.open(8000, [{:broadcast, true}]);
+        listener = spawn(fn -> Listener.init(pidCallback, socket) end);
+        beacon = spawn(fn -> Beacon.init(socket) end);
+      rescue
+        _ -> IO.puts("Imposible cargar sistema de autodeteccion");
+      end
+      
+    end
+  end
+
   # Manages the state of the superPeers
   defmodule SuperPeerManager do
     def init(master_pid) do
@@ -103,6 +156,7 @@ defmodule Network do
 
   # Loop de
   def init(_) do
+    PeerAutodetection.init(self());
     death_manager = DeathManager.init(self())
     # register_to_superpeer()
     super_death_manager = SuperDeathManager.init(self())
