@@ -11,13 +11,18 @@ defmodule Network do
       defp loop(pidCallback, socket)
       do
         {data,client} = socket |> Socket.Datagram.recv!;
+        {:ok, list} = :inet.getif();
+        list = list |> Enum.map(fn {x, _, _} -> x end);
+
         IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client));
         {client, _port} = client;
-        {a,b,c,d} = client;
-        client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}")
-        IO.inspect(client)
-        IO.puts("CLIENTE")
-        Network.add_peer(pidCallback, client)
+        if (list |> Enum.all?(fn x -> x != client end)) do
+          {a,b,c,d} = client;
+          client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
+          IO.inspect(client);
+          IO.puts("CLIENTE");
+          Network.add_peer(pidCallback, client);
+        end
         loop(pidCallback, socket)
       end
     end
