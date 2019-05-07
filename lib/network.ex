@@ -44,22 +44,22 @@ IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
       end
 
       defp announce(socketsList) do
-        socketsList 
+        socketsList
         |> IO.inspect
-        |> Enum.map(fn {socket, broadcast} -> 
-          Socket.Datagram.send!(socket, "PEER", {broadcast, 8000})
+        |> Enum.map(fn {socket, broadcast} ->
+          Socket.Datagram.send!(socket, "PEER", {{255,255,255,255}, 8000})
         end);
-        
+
       end
     end
 
     def init(pidCallback) do
-      
+
       try do
         {:ok, listenSocket} = Socket.UDP.open(8000, [{:broadcast, true}, {:local, [{:address, {0,0,0,0}}]}])
         {:ok, interfaces} = :inet.getif();
         sendSocketsList = interfaces
-        |> IO.inspect 
+        |> IO.inspect
         |> Enum.map(fn {ip, broadcast, _} ->
           {:ok, socket} = Socket.UDP.open(10000, [{:broadcast, true}, {:local, [{:address, ip}]}]);
           {
@@ -239,7 +239,7 @@ IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
     one_peer =
       peers
       |> Enum.random()
-      |> Monitor.get()  
+      |> Monitor.get()
 
     send({:peer, one_peer}, {:want_to_connect, Node.self()})
 
