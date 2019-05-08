@@ -1,6 +1,10 @@
 defmodule SuperPeer do
   use GenServer
 
+  
+              
+
+
   defmodule SuperPeerAutodetection do
     defmodule Listener do
       def init(pidCallback, socket) do
@@ -8,26 +12,26 @@ defmodule SuperPeer do
       end
 
       defp loop(pidCallback, socket) do
-        {data, client} = socket |> Socket.Datagram.recv!()
-        {:ok, list} = :inet.getif()
-        list = list |> Enum.map(fn {x, _, _} -> x end)
+        try do
+          {data, client} = socket |> Socket.Datagram.recv!()
+          {:ok, list} = :inet.getif()
+          list = list |> Enum.map(fn {x, _, _} -> x end)
+          {client, _port} = client
 
-        {client, _port} = client
-
-        case data do
-          "PEER" -> 
-            if list |> Enum.all?(fn x -> x != client end) do
-              IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
-              {a, b, c, d} = client;
-              client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
-              GenServer.call(pidCallback, {:registrar, client})
-            end
-          "SUPERPEER" -> 
-            if list |> Enum.all?(fn x -> x != client end) do
-              IO.puts("ENCONTRADO SUPERPEER EN: " <> Kernel.inspect(client));
-              
-              # Registrar superpeer
-            end
+          case data do
+            "PEER" -> 
+              if list |> Enum.all?(fn x -> x != client end) do
+                GenServer.call(pidCallback, {:registrar, client})
+              end
+            "SUPERPEER" -> 
+              if list |> Enum.all?(fn x -> x != client end) do
+                :ok;
+                # AQUI IRIA UN "SUPER_PEER ENCONTRADO"
+              end
+            _x ->
+              :ok;
+          end
+        rescue
           _ -> :ok;
         end
         loop(pidCallback, socket)
@@ -85,6 +89,7 @@ defmodule SuperPeer do
   end
 
 
+
   defmodule SocketNetworking do
     def init(pid_master) do
       socket = Socket.TCP.listen!(8000)
@@ -103,7 +108,8 @@ defmodule SuperPeer do
 
       case jsonOptions["function"] do
         "status" ->
-          {:ok, json} = JSON.encode(%{"result" => "ok"})
+          IO.puts("Recibi un ping!");
+          {:ok, json} = JSON.encode(%{"result" => "ok"});
           Socket.Stream.send!(client, json)
 
         "register" ->
@@ -141,8 +147,7 @@ defmodule SuperPeer do
     defp loop(pid_network) do
       receive do
         {:dead, who} ->
-          IO.inspect("Who dead")
-          IO.inspect(who)
+          IO.puts("Borrando: " <> Kernel.inspect(who));
           SuperPeer.borrar(pid_network, who)
           loop(pid_network)
       end
@@ -163,25 +168,37 @@ defmodule SuperPeer do
   end
 
   def handle_call({:registrar, node}, {_, reference}, {list, death_manager}) do
-    monitored_pid = Monitor.init(node, death_manager)
+    if (Enum.all?(list, fn x -> Monitor.get(x) != node end)) do
+      IO.puts("Registrando peer: " <> Kernel.inspect(node));
+      monitored_pid = Monitor.init(node, death_manager);
+      {:reply, :ok, {[monitored_pid | list], death_manager}}
+    else
+      {:reply, :error, {list, death_manager}}
+    end
 
-    {:reply, :ok, {[monitored_pid | list], death_manager}}
+
   end
 
   def handle_call({:pedir_lista, node}, {_who, _reference}, {list, death_manager}) do
-    IO.inspect("Lista Pedida")
-    IO.inspect(node)
     # Filtramos los que no son la persona pedida
     filterdList =
       list
       |> Enum.map(fn x -> Monitor.get(x) end)
-      |> Enum.filter(fn x -> x != node end)
-
+      |> Enum.filter(fn x -> x != node end);
+    
     {:reply, filterdList, {list, death_manager}}
+
   end
 
   def handle_call({:delete_node, monitor_pid}, {_who, _reference}, {list, death_manager}) do
-    {:reply, {:ok}, {Enum.filter(list, fn x -> x != monitor_pid end), death_manager}}
+    IO.puts("Eliminando nodo: " <> Kernel.inspect(monitor_pid));
+
+    list = list |> Enum.filter(fn x -> case Monitor.get(x) do 
+      :error -> false
+      monitor_pid -> false
+      _ -> true
+    end end);
+    {:reply, {:ok}, {list, death_manager}}
   end
 
   def pedir_lista(willyrex) do

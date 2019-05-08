@@ -14,6 +14,7 @@ defmodule Monitor do
         :error
 
         # code
+    after 100 -> :error
     end
   end
 
@@ -31,11 +32,9 @@ defmodule Monitor do
 
         case a do
           :dead ->
-            IO.puts("dead");
             send(master_pid, {:dead, ip_addr})
 
           :alive ->
-            IO.puts("alive");
             loop(ip_addr, master_pid)
         end
 
@@ -48,19 +47,41 @@ defmodule Monitor do
       {:ok, json} = JSON.encode(%{"function" => "status"})
       {a,b,c,d} = ip_addr;
       ip_addr = "#{a}.#{b}.#{c}.#{d}";
-      IO.puts("La direccion es... " <> Kernel.inspect(ip_addr));
       {:ok, socket} = Socket.TCP.connect(ip_addr, 8000);
       Socket.Stream.send!(socket,json);
+      
+      miPid = self();
+      pid = spawn(fn -> 
+        try do
+          {:ok, json} = Socket.Stream.recv(socket);
+          send(miPid, {:received, json});
+        rescue
+          _ -> send(miPid, {:error});
+        end
+      end);
 
-      {:ok, json} = Socket.Stream.recv(socket);
-      case json["result"] do
-        "ok" ->
-          :alive
-        _ -> :dead
+      receive do
+        {:received, json} ->
+          {:ok, json} = JSON.decode(json);
+          case json["result"] do
+            "ok" ->
+              :alive
+            _ -> :dead
+          end
+        {:error} -> 
+          :dead
+        _x-> IO.inspect(_x);
+              :dead
+        after 3000 -> 
+          Process.exit(pid, :normal);
+          :dead
       end
+
+
+
+      
     rescue
-      x -> 
-        IO.puts("ERROR FATAL: " <> Kernel.inspect(x));
+      _ -> 
         :dead
     end
   end
