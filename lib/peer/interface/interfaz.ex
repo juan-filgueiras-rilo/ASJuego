@@ -240,9 +240,9 @@ defmodule Interfaz do
 
   def operaciones("1\n", pidinter, game, pidred) do
     rivalnode = Network.get_peer(pidred)
-    info = Process.info(self())
-    {_, name} = List.keyfind(info, :registered_name, 0)
-    send(rivalnode, {:start, {name, Node.self()}, GameFacade.synCombate(game)})
+    
+	
+	#send(rivalnode, {:start, {name, Node.self()}, GameFacade.synCombate(game)})
 
     receive do
       {:yes, rivaldata} ->
