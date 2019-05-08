@@ -102,7 +102,7 @@ defmodule Interfaz do
 
   def jugada_partida(pidred, pidinter, "2\n", game) do
     Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
-    send(pid, :game)
+    send(pidinter, :game)
   end
 
   def jugada_partida(pidred, pidinter, "3\n", game) do
@@ -111,6 +111,7 @@ defmodule Interfaz do
     Utils.mostrarJugador(enemigo, 1)
     send(pidinter, :game)
   end
+
 
   def jugada_partida(pidred, pidinter, "4\n", game, rival) do
 
@@ -121,10 +122,10 @@ defmodule Interfaz do
     #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
     IO.puts("Introduzca 0 para volver atras");
 
-	send pid, :hechizo
+	send pidred, :hechizo
 
 	receive do
-      {:op, "0\n"} -> send pid, :game
+      {:op, "0\n"} -> send pidred, :game
       {:op, op}
         when is_binary(op)
         and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
@@ -170,11 +171,6 @@ defmodule Interfaz do
     :numeroInvalido
   end
   
-  jugada_partida(pidred, pidinter, op, game)
-
-
-
-pidred, pidinter, "4\n", game, rival
 
 
   def jugada_partida(pidred, pidinter, "5\n", game) do
@@ -204,7 +200,7 @@ pidred, pidinter, "4\n", game, rival
 	juego(pidred, pidinter, game)
 
     send(pidinter, :menu)
-    menu(pidinter, game)
+    menu(pidinter, game, pidred)
   end
 
   def op_juego("N\n", pidinter, game, pidred) do
@@ -234,13 +230,13 @@ pidred, pidinter, "4\n", game, rival
         IO.puts("No jugar")
     end
 
-    send(pid, :menu)
-    menu(pid, game)
+    send(pidinter, :menu)
+    menu(pidinter, game, pidred)
   end
 
   def operaciones("2\n", pidinter, game, pidred) do
 	Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
-    send(pid, :menu)
+    send(pidinter, :menu)
     menu(pidinter, game, pidred)
   end
 
