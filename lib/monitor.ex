@@ -26,7 +26,7 @@ defmodule Monitor do
         send(pid_to_reply, {:ok, ip_addr})
         loop(ip_addr, master_pid)
     after
-      10000 ->
+      2000 ->
         a = check(ip_addr)
 
         case a do
@@ -44,11 +44,11 @@ defmodule Monitor do
   defp check(ip_addr) do
     try do
       {:ok, json} = JSON.encode(%{"function" => "status"})
-
-      socket =
-        Socket.TCP.connect({ip_addr, 8000})
-        |> Socket.Stream.send!(json);
-      Socket.Stream.send(socket,json);
+      {a,b,c,d} = ip_addr;
+      ip_addr = "#{a}.#{b}.#{c}.#{d}";
+      IO.puts("La direccion es... " <> Kernel.inspect(ip_addr));
+      {:ok, socket} = Socket.TCP.connect(ip_addr, 8000);
+      Socket.Stream.send!(socket,json);
 
       {:ok, json} = Socket.Stream.recv(socket);
       case json["result"] do
@@ -57,7 +57,9 @@ defmodule Monitor do
         _ -> :dead
       end
     rescue
-      _ -> :dead
+      x -> 
+        IO.puts("ERROR FATAL: " <> Kernel.inspect(x));
+        :dead
     end
   end
 end
