@@ -150,6 +150,7 @@ defmodule SuperPeer do
   end
 
   def init(_) do
+    autodeteccion = SuperPeerAutodetection.init(self());
     death_manager = DeathManager.init(self())
     {:ok, {[], death_manager}}
   end

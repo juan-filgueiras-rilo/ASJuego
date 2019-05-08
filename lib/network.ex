@@ -44,15 +44,11 @@ defmodule Network do
           "PEER" -> 
             if list |> Enum.all?(fn x -> x != client end) do
               IO.puts("ENCONTRADO PEER EN: " <> Kernel.inspect(client))
-              {a, b, c, d} = client;
-              client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
               Network.add_peer(pidCallback, client)
             end
           "SUPERPEER" -> 
             if list |> Enum.all?(fn x -> x != client end) do
               IO.puts("ENCONTRADO SUPERPEER EN: " <> Kernel.inspect(client));
-              {a, b, c, d} = client;
-              client = String.to_atom("peer@" <> "#{a}.#{b}.#{c}.#{d}");
               Network.add_superpeer(pidCallback, client)
             end
           _ -> :ok;
@@ -239,7 +235,7 @@ defmodule Network do
       
 
       if !Enum.any?(peers, fn x -> Monitor.get(x) == peer end) do
-        IO.puts("Añadiendo superpeer: " <> Kernel.inspect(peer))
+        IO.puts("Añadiendo peer: " <> Kernel.inspect(peer))
 
         {:reply, :ok, {superPeers, [Monitor.init(peer, death_manager) | peers], death_manager}}
       else
@@ -252,10 +248,10 @@ defmodule Network do
   end
 
   def handle_call({:remove_peer, peer}, _from, {superPeers, peers, death_manager}) do
-    IO.puts("Eliminando peer: " <> Kernel.inspect(Monitor.get(peer)));
+    IO.puts("Eliminando peer: " <> Kernel.inspect(peer));
     peers =
       peers
-      |> Enum.filter(fn x -> x != Monitor.get(peer) end)
+      |> Enum.filter(fn x -> peer != Monitor.get(x) end)
 
     {:reply, :ok, {superPeers, peers, death_manager}}
   end
@@ -278,7 +274,7 @@ defmodule Network do
   end
   
   def handle_call({:remove_superpeer, peer}, _from, {superPeers, peers, death_manager}) do
-    IO.puts("Eliminando superpeer: " <> Kernel.inspect(Monitor.get(peer)));
+    IO.puts("Eliminando superpeer: " <> Kernel.inspect(peer));
     superPeers =
       superPeers
       |> Enum.filter(fn x -> x != Monitor.get(peer) end)

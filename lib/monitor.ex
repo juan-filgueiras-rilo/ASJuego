@@ -31,7 +31,7 @@ defmodule Monitor do
 
         case a do
           :dead ->
-            send(master_pid, {:dead, self()})
+            send(master_pid, {:dead, ip_addr})
 
           :alive ->
             loop(ip_addr, master_pid)
@@ -43,11 +43,10 @@ defmodule Monitor do
 
   defp check(ip_addr) do
     try do
-      {ip, _port} = ip_addr
       {:ok, json} = JSON.encode(%{"function" => "status"})
 
       socket =
-        Socket.TCP.connect({ip, 8000})
+        Socket.TCP.connect({ip_addr, 8000})
         |> Socket.Stream.send!(json);
       Socket.Stream.send(socket,json);
 
