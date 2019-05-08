@@ -43,20 +43,20 @@ defmodule Interfaz do
     end
   end
 
-  def init(pid, game) do
-    Peer.registrar()
-    menu(pid, game)
+  def init(pidinter, game) do
+    pidred = Network.initialize()
+    menu(pidinter, game, pidred)
   end
 
-  def menu(pid, game) do
+  def menu(pidinter, game, pidred) do
     receive do
       {:op, op} ->
-        operaciones(op, pid, game)
+        operaciones(op, pidinter, game, pidred)
 
       {:start, node, enemydata} ->
         IO.puts("Recibida conexion")
         IO.puts("Usted desea jugar? (S o N)")
-        inicio_juego(node, pid, game, enemydata)
+        inicio_juego(node, pidinter, game, enemydata)
         menu(pid, game)
     end
   end
@@ -107,7 +107,7 @@ defmodule Interfaz do
 
   def jugada_partida(_, pid, "3\n", game, rival) do
     IO.puts("Viendo datos rival...\n")
-	{:ok, enemigo} = GameFacade.obtenerEnemigo(game)
+	enemigo = GameFacade.obtenerEnemigo(game)
     Utils.mostrarJugador(enemigo, 1)
     send(pid, :game)
   end
@@ -219,9 +219,6 @@ defmodule Interfaz do
     send(pid, :game)
 
 
-
-    {borrar2, rival} = GameFacade.ackCombate(game, self(), enemydata)
-
 	juego(node, pid, game, rival)
     send(pid, :menu)
     menu(pid, game)
@@ -241,8 +238,8 @@ defmodule Interfaz do
     inicio_juego(node, pid, game, enemydata)
   end
 
-  def operaciones("1\n", pid, game) do
-    rivalnode = Peer.buscar_rival()
+  def operaciones("1\n", pidinter, game, pidred) do
+    rivalnode = Network.get_peer(pidred)
     info = Process.info(self())
     {_, name} = List.keyfind(info, :registered_name, 0)
     send(rivalnode, {:start, {name, Node.self()}, GameFacade.synCombate(game)})
@@ -262,26 +259,26 @@ defmodule Interfaz do
     menu(pid, game)
   end
 
-  def operaciones("2\n", pid, game) do
+  def operaciones("2\n", pidinter, game, pidred) do
 	Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pid, :menu)
-    menu(pid, game)
+    menu(pidinter, game, pidred)
   end
 
-  def operaciones("3\n", pid, game) do
+  def operaciones("3\n", pidinter, game, pidred) do
     Utils.mostrarClases(GameFacade.listarClases(game), 1)
-    send(pid, :menu)
-	menu(pid, game)
+    send(pidinter, :menu)
+	menu(pidinter, game, pidred)
   end
 
-  def operaciones("4\n", pid, _) do
+  def operaciones("4\n", pidinter, _, _) do
     IO.puts("Juego finalizado\n")
-    send(pid, :exit)
+    send(pidinter, :exit)
   end
 
   def operaciones(_, pid, game) do
     IO.puts("Opcion erronea...\n")
-    send(pid, :menu)
-    menu(pid, game)
+    send(pidinter, :menu)
+    menu(pidinter, game, pidred)
   end
 end
