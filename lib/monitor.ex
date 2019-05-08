@@ -31,9 +31,11 @@ defmodule Monitor do
 
         case a do
           :dead ->
+            IO.puts("dead");
             send(master_pid, {:dead, ip_addr})
 
           :alive ->
+            IO.puts("alive");
             loop(ip_addr, master_pid)
         end
 

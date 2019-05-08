@@ -14,7 +14,7 @@ defmodule Network do
     end
 
     def handle_client(client) do
-      {data, address} = Socket.Stream.recv(client)
+      data = Socket.Stream.recv!(client)
       {:ok, jsonOptions} = JSON.decode(data)
 
       case jsonOptions["function"] do
@@ -37,7 +37,6 @@ defmodule Network do
         {data, client} = socket |> Socket.Datagram.recv!()
         {:ok, list} = :inet.getif()
         list = list |> Enum.map(fn {x, _, _} -> x end)
-
         {client, _port} = client
 
         case data do
@@ -51,7 +50,9 @@ defmodule Network do
               IO.puts("ENCONTRADO SUPERPEER EN: " <> Kernel.inspect(client));
               Network.add_superpeer(pidCallback, client)
             end
-          _ -> :ok;
+          _x -> 
+            IO.puts("Mensaje");
+            :ok;
         end
         loop(pidCallback, socket)
       end
@@ -203,6 +204,7 @@ defmodule Network do
 
   # Loop de
   def init(_) do
+    IO.puts("Lanzado");
     SocketNetworking.init(self());
     PeerAutodetection.init(self());
     death_manager = DeathManager.init(self());
