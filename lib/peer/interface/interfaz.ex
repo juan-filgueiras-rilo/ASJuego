@@ -195,6 +195,8 @@ defmodule Interfaz do
 
   def op_juego("S\n", pidinter, game, pidred) do
     IO.puts("\n\nA jugar\n!")
+	
+	Network.acceptIncoming(pidred)
 
     send(pidinter, :game)
 
@@ -206,7 +208,7 @@ defmodule Interfaz do
 
   def op_juego("N\n", pidinter, game, pidred) do
 
-	#Enviar mensaje al rival de que no qu
+	Network.rejectIncoming(pidred)
     #send(node, :no)
     send(pidinter, :menu)
     :ok
