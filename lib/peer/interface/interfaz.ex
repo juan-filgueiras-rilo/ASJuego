@@ -126,7 +126,7 @@ defmodule Interfaz do
 	send pidinter, :hechizo
 
 	receive do
-      {:op, "0\n"} -> send (pidinter, :game)
+      {:op, "0\n"} -> send(pidinter, :game)
       {:op, op}
         when is_binary(op)
         and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
