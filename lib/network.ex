@@ -43,7 +43,7 @@ defmodule Network do
           end
         "ACK fight" ->
           :ok;
-          #GenServer.call(pid_master, :ackFight)
+          GenServer.call(pid_master, :ackIncomingFight)
         
       end
 
@@ -85,7 +85,7 @@ defmodule Network do
 
     defmodule Beacon do
       def init(socketsList) do
-        loop(socketsList))
+        loop(socketsList)
       end
 
       defp loop(socketsList) do
@@ -459,7 +459,7 @@ defmodule Network do
         Socket.Stream.send(socket, json);
         Socket.Stream.close!(socket);
 
-        send(uIPid, {:playerFound});
+        send(uIPid, :playerFound);
 
         GameFacade.synCombate(gamePid);
         GameFacade.ackCombate(gamePid, self(), enemyData);
