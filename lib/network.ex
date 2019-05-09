@@ -707,8 +707,14 @@ defmodule Network do
 
         {:ok, json} =
           JSON.encode(%{"function" => "usarHechizo", "hechizo" => Hechizo.save(hechizo)})
-
-        socket =  Socket.TCP.connect!({address, 8000})
+        address = case address do
+          x when is_binary(x) -> x
+          x ->
+            addr = Monitor.get(x);
+            {a,b,c,d} = addr;
+            "#{a}.#{b}.#{c}.#{d}";
+        end
+        socket = Socket.TCP.connect!({address, 8000});
         socket |> Socket.Stream.send!(json)
 
         Socket.close(socket)
@@ -730,7 +736,7 @@ defmodule Network do
         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
       ) do
     GameFacade.usarHechizoRemoto(gamePid, hechizo)
-    send(uIPid, {:hechizoEnemigo, hechizo})
+    send(uIPid, {:attack, hechizo})
     {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
