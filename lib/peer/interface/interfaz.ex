@@ -142,7 +142,6 @@ defmodule Interfaz do
 											 spawn(fn -> Interfaz.mensaje_propio(pid) end)
 							    _ ->  IO.puts("Hechizo utilizado!")
 								      IO.puts("Espere su turno...\n")
-									  juego(pidred, pidinter, game)
 							  end
     end
   end
