@@ -13,8 +13,6 @@ defmodule GameFacade do
     :not_found
   end
 
-
-
   @impl true
   def init({fileNameClases, pidCallback}) do
     try do
@@ -27,12 +25,13 @@ defmodule GameFacade do
     end
   end
 
-
-
-  def handle_call(:obtenerEnemigo, _from, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}) do
-	{:reply, GestorCombate.obtenerEnemigo(pidCombate),
-			{callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
-
+  def handle_call(
+        :obtenerEnemigo,
+        _from,
+        {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}
+      ) do
+    {:reply, GestorCombate.obtenerEnemigo(pidCombate),
+     {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
   end
 
   # Crear jugador
@@ -88,12 +87,12 @@ defmodule GameFacade do
   @impl true
   def handle_call(:getJugador, _from, {callbackIU, clases, jugador, combate}) do
     case combate do
-      {:combate, _, pidCombate} -> {:reply, GestorCombate.obtenerJugador(pidCombate), {callbackIU, clases, jugador, combate}}
-      _ -> {:reply, jugador, {callbackIU, clases, jugador, combate}}
+      {:combate, _, pidCombate} ->
+        {:reply, GestorCombate.obtenerJugador(pidCombate), {callbackIU, clases, jugador, combate}}
 
-
+      _ ->
+        {:reply, jugador, {callbackIU, clases, jugador, combate}}
     end
-
   end
 
   @impl true
@@ -154,8 +153,7 @@ defmodule GameFacade do
   # Retirarse
   @impl true
   def handle_cast(:retirarse, {callBackIU, clases, jugador, {:combate, _, _}}) do
-    
-    send(callBackIU, :end);
+    send(callBackIU, :end)
     {:noreply, {callBackIU, clases, jugador, {:fueraCombate}}}
   end
 
@@ -165,8 +163,7 @@ defmodule GameFacade do
         _from,
         {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}
       ) do
-
-    Network.hechizo_propio(pidCallbackRed,hechizo)
+    Network.hechizo_propio(pidCallbackRed, hechizo)
     resultado = GestorCombate.usarHechizoPropio(pidCombate, hechizo)
 
     case resultado do
@@ -182,13 +179,11 @@ defmodule GameFacade do
          {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
     end
   end
-  
-  #retirarseRemoto
-  def handle_call(:retirada, {callBackIU, clases, jugador, {combate, _,_}}) do
+
+  # retirarseRemoto
+  def handle_call(:retirada, {callBackIU, clases, jugador, {combate, _, _}}) do
     {:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}
   end
-
-  
 
   # usarHechizoRemoto
   def handle_call(
@@ -200,13 +195,14 @@ defmodule GameFacade do
 
     case resultado do
       :continuar ->
-        IO.puts("PRINTEO DESDE LOGICA: " <> Kernel.inspect(callBackIU));
-        send(callBackIU, {:attack, hechizo});
+        IO.puts("PRINTEO DESDE LOGICA: " <> Kernel.inspect(callBackIU))
+        send(callBackIU, {:attack, hechizo})
+
         {:reply, :continuar,
          {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
 
       :derrota ->
-        send(callBackIU, :derrota);
+        send(callBackIU, :derrota)
         {:reply, :derrota, {callBackIU, clases, jugador, {:fueraCombate}}}
 
       :turnoInvalido ->
@@ -215,12 +211,14 @@ defmodule GameFacade do
     end
   end
 
-  def handle_call({:hechizosDisponibles}, _from, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}})
-  do
-    resultado = GestorCombate.getHechizosDisponibles(pidCombate);
-    {:reply, resultado,  {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
+  def handle_call(
+        {:hechizosDisponibles},
+        _from,
+        {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}
+      ) do
+    resultado = GestorCombate.getHechizosDisponibles(pidCombate)
+    {:reply, resultado, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
   end
-
 
   def iniciar(fileNameClasses, pidCallback)
       when is_binary(fileNameClasses) and
@@ -319,7 +317,6 @@ defmodule GameFacade do
     end
   end
 
-
   def obtenerEnemigo(juego) do
     try do
       {:ok, enemigo} = GenServer.call(juego, :obtenerEnemigo)
@@ -328,7 +325,6 @@ defmodule GameFacade do
       _ -> :error
     end
   end
-
 
   def usarHechizoPropio(juego, hechizo)
       when is_tuple(hechizo) and
@@ -353,8 +349,7 @@ defmodule GameFacade do
   end
 
   def getHechizosDisponibles(juego)
-    when is_pid(juego)
-  do
+      when is_pid(juego) do
     estado = GenServer.call(juego, :getEstado)
 
     case estado do
@@ -363,12 +358,11 @@ defmodule GameFacade do
     end
   end
 
-  def handle_call({:setUI, ui}, _from, {callBackIU, clases, jugador, combate})
-  do
-    {:reply, :ok, {ui, clases, jugador, combate}};
+  def handle_call({:setUI, ui}, _from, {callBackIU, clases, jugador, combate}) do
+    {:reply, :ok, {ui, clases, jugador, combate}}
   end
-  def setUICallback(pidJuego, newUICallback)
-  do
-    GenServer.call(pidJuego, {:setUI, newUICallback});
+
+  def setUICallback(pidJuego, newUICallback) do
+    GenServer.call(pidJuego, {:setUI, newUICallback})
   end
 end

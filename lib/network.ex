@@ -49,7 +49,9 @@ defmodule Network do
         "usarHechizo" ->
           hechizo = Hechizo.load(jsonOptions["hechizo"])
           Network.hechizo_recibido(pid_master, hechizo)
-        "ACK fight"  -> 
+
+
+        "ACK fight" ->
           GenServer.call(pid_master, :ackIncomingFight)
       end
 
@@ -214,12 +216,14 @@ defmodule Network do
       receive do
         {:setpeer, peer} ->
           loop(pid_network, peer)
+
         {:unsetpeer} ->
           loop(pid_network, :unlinked)
+
         {:dead, who} ->
-          if (who == peer) do
-            
-          end;
+          if who == peer do
+          end
+
           Network.remove_peer(pid_network, who)
           loop(pid_network, peer)
       end
@@ -254,18 +258,19 @@ defmodule Network do
       case attemptFight(peer, player) do
         {:established, enemyData} ->
           try do
-            addr = Monitor.get(peer);
-            {a,b,c,d} = addr;
-            addr = "#{a}.#{b}.#{c}.#{d}";
-            socket = Socket.TCP.connect!(addr, 8000);
+            addr = Monitor.get(peer)
+            {a, b, c, d} = addr
+            addr = "#{a}.#{b}.#{c}.#{d}"
+            socket = Socket.TCP.connect!(addr, 8000)
 
-            {:ok, json} = JSON.encode(%{
-              "function" => "ACK fight"
-            });
+            {:ok, json} =
+              JSON.encode(%{
+                "function" => "ACK fight"
+              })
 
-            Socket.Stream.send(socket, json);
+            Socket.Stream.send(socket, json)
 
-            Socket.Stream.close(socket);
+            Socket.Stream.close(socket)
 
             GenServer.call(pid_network, {:establish_Game, {peer, enemyData}})
           rescue
@@ -334,27 +339,43 @@ defmodule Network do
     |> Enum.map(fn x -> Monitor.init(String.to_atom("super@" <> "#{x}"), super_death_manager) end)
   end
 
-  def handle_call(:noAckIncomingFight, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
+  def handle_call(
+        :noAckIncomingFight,
+        _from,
+        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
+      ) do
     case pair do
-      {:awaitingACK, addr} -> 
-        send(uIPid, :no) # Le comunico a la interfaz que entramos en combate
-        {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
-      _ -> {:reply, :error, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
+      {:awaitingACK, addr} ->
+        # Le comunico a la interfaz que entramos en combate
+        send(uIPid, :no)
+
+        {:reply, :ok,
+         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
+
+      _ ->
+        {:reply, :error,
+         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
     end
-    
   end
 
-
-  def handle_call(:ackIncomingFight, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
+  def handle_call(
+        :ackIncomingFight,
+        _from,
+        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
+      ) do
     case pair do
-      {:awaitingACK, addr} -> 
-        send(uIPid, :yes) # Le comunico a la interfaz que entramos en combate
-        {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr}}}
-      _ -> {:reply, :error, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-    end
-    
-  end
+      {:awaitingACK, addr} ->
+        # Le comunico a la interfaz que entramos en combate
+        send(uIPid, :yes)
 
+        {:reply, :ok,
+         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr}}}
+
+      _ ->
+        {:reply, :error,
+         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
+    end
+  end
 
   def handle_call(
         :getEnemyFinder,
@@ -483,46 +504,54 @@ defmodule Network do
      {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
+  def handle_call(
+        {:rejectIncoming},
+        _from,
+        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager,
+         {:incoming, socket, data, addr}}
+      ) do
+    {:ok, msg} =
+      JSON.encode(%{
+        "function" => "Reject fight"
+      })
 
+    {a, b, c, d} = addr
+    addr = "#{a}.#{b}.#{c}.#{d}"
+    socket = Socket.TCP.connect!(addr, 8000)
+    Socket.Stream.send!(socket, msg)
+    Socket.Stream.close!(socket)
 
-
-  def handle_call({:rejectIncoming}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:incoming, socket, data, addr}})
-  do
-
-    {:ok, msg} = JSON.encode(%{
-      "function" => "Reject fight"
-    });
-
-    {a,b,c,d} = addr;
-    addr = "#{a}.#{b}.#{c}.#{d}";
-    socket = Socket.TCP.connect!(addr, 8000);
-    Socket.Stream.send!(socket, msg);
-    Socket.Stream.close!(socket);
-
-    {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
+    {:reply, :ok,
+     {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
   end
 
-  def handle_call({:acceptIncoming}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:incoming, socket, data, addr}})
-  do
+  def handle_call(
+        {:acceptIncoming},
+        _from,
+        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager,
+         {:incoming, socket, data, addr}}
+      ) do
+    {_pid, player} = GameFacade.ackCombate(gamePid, self(), data)
 
-    {_pid, player} = GameFacade.ackCombate(gamePid, self(), data);
+    {:ok, msg} =
+      JSON.encode(%{
+        "function" => "Accept fight",
+        "player" => Jugador.save(player)
+      })
 
-    {:ok, msg} = JSON.encode(%{
-      "function" => "Accept fight",
-      "player" => Jugador.save(player)
-    });
-    IO.inspect(addr);
-    {a,b,c,d} = addr;
-    addr = "#{a}.#{b}.#{c}.#{d}";
-    socket = Socket.TCP.connect!(addr, 8000);
-    Socket.Stream.send!(socket, msg);
-    Socket.Stream.close!(socket);
+    IO.inspect(addr)
+    {a, b, c, d} = addr
+    addr = "#{a}.#{b}.#{c}.#{d}"
+    socket = Socket.TCP.connect!(addr, 8000)
+    Socket.Stream.send!(socket, msg)
+    Socket.Stream.close!(socket)
 
-    pidRed = self();
-    spawn(fn -> 
-      :timer.sleep(10000);
-      GenServer.call(pidRed, :noAckIncomingFight);
-    end);
+    pidRed = self()
+
+    spawn(fn ->
+      :timer.sleep(10000)
+      GenServer.call(pidRed, :noAckIncomingFight)
+    end)
 
     {:reply, :ok,
      {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:awaitingACK, addr}}}
@@ -648,8 +677,6 @@ defmodule Network do
     GenServer.call(pid_network, :count)
   end
 
-
-
   def set_game_pid(pid_network, gamePid) do
     GenServer.call(pid_network, {:setGamePid, gamePid})
   end
@@ -665,18 +692,21 @@ defmodule Network do
       ) do
     case pair do
       {:paired, address} ->
-       
-
         {:ok, json} =
           JSON.encode(%{"function" => "usarHechizo", "hechizo" => Hechizo.save(hechizo)})
-        address = case address do
-          x when is_binary(x) -> x
-          x ->
-            addr = Monitor.get(x);
-            {a,b,c,d} = addr;
-            "#{a}.#{b}.#{c}.#{d}";
-        end
-        socket = Socket.TCP.connect!({address, 8000});
+
+        address =
+          case address do
+            x when is_binary(x) ->
+              x
+
+            x ->
+              addr = Monitor.get(x)
+              {a, b, c, d} = addr
+              "#{a}.#{b}.#{c}.#{d}"
+          end
+
+        socket = Socket.TCP.connect!({address, 8000})
         socket |> Socket.Stream.send!(json)
 
         Socket.close(socket)
@@ -697,8 +727,8 @@ defmodule Network do
         _from,
         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
       ) do
-    GameFacade.usarHechizoRemoto(gamePid, hechizo)
-    
+    resultado = GameFacade.usarHechizoRemoto(gamePid, hechizo)
+    send(uIPid, resultado)
     {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 

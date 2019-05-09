@@ -11,7 +11,7 @@ defmodule Interfaz do
   end
 
   def recibir(pid) do
-    op = IO.gets("")
+    op = IO.gets(">")
     send(pid, {:op, op})
 
     receive do
@@ -27,6 +27,7 @@ defmodule Interfaz do
 
       :play ->
         IO.puts("Usted desea jugar? (S o N)")
+
         recibir(pid)
 
       :game ->
@@ -37,16 +38,15 @@ defmodule Interfaz do
         IO.puts("Introduzca 5 para huir del combate\n")
         recibir(pid)
 
-
-	  :hechizo -> recibir(pid)
-
+      :hechizo ->
+        recibir(pid)
     end
   end
 
   def init(pidinter, game) do
-    GameFacade.setUICallback(game, self());
+    GameFacade.setUICallback(game, self())
     pidred = Network.initialize(self())
-    Network.set_game_pid(pidred,game)
+    Network.set_game_pid(pidred, game)
     menu(pidinter, game, pidred)
   end
 
@@ -59,7 +59,7 @@ defmodule Interfaz do
         IO.puts("Recibida conexion")
         IO.puts("Usted desea jugar? (S o N)")
         inicio_juego(pidinter, game, pidred)
-		send(pidinter, :menu)
+        send(pidinter, :menu)
         menu(pidinter, game, pidred)
     end
   end
@@ -70,12 +70,12 @@ defmodule Interfaz do
     end
   end
 
-
-  #Recibe es el mensaje del rival tras atacar
+  # Recibe es el mensaje del rival tras atacar
 
   def juego(pidred, pidinter, game) do
-    IO.puts("PID DE INTERFAZ: " <> Kernel.inspect(self())); 
-    IO.puts("FIESTAAA: " <> Kernel.inspect([pidred | [pidinter | [game | []]]]))
+    # IO.puts("PID DE INTERFAZ: " <> Kernel.inspect(self()))
+    # IO.puts("FIESTAAA: " <> Kernel.inspect([pidred | [pidinter | [game | []]]]))
+
     receive do
       {:attack, hechizo} ->
         send(pidinter, :game)
@@ -88,14 +88,14 @@ defmodule Interfaz do
       :escapar ->
         IO.puts("\n\nEl jugador ha escapado")
         IO.puts("Partida finalizada\n\n")
-		
+
       :end ->
         :ok
-		
-      :derrota -> :ok
+
+      :derrota ->
+        :ok
     end
   end
-
 
   def jugada_partida(pidred, pidinter, "1\n", game) do
     IO.puts("Viendo hechizos disponibles...\n")
@@ -112,71 +112,69 @@ defmodule Interfaz do
 
   def jugada_partida(pidred, pidinter, "3\n", game) do
     IO.puts("Viendo datos rival...\n")
-	enemigo = GameFacade.obtenerEnemigo(game)
+    enemigo = GameFacade.obtenerEnemigo(game)
     Utils.mostrarJugador(enemigo, 1)
     send(pidinter, :game)
   end
 
-
   def jugada_partida(pidred, pidinter, "4\n", game) do
-
     IO.puts("Mostrando hechizos...\n")
-	  nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
+    nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     hechizos = GameFacade.getHechizosDisponibles(game)
-    Utils.mostrarHechizosDetallados(hechizos, nivel, 1);
-    #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
-    IO.puts("Introduzca 0 para volver atras");
+    Utils.mostrarHechizosDetallados(hechizos, nivel, 1)
+    # IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
 
-	send pidinter, :hechizo
+    IO.puts("Introduzca 0 para volver atras")
 
-	receive do
-      {:op, "0\n"} -> send(pidinter, :game)
+    send(pidinter, :hechizo)
+
+    receive do
+      {:op, "0\n"} ->
+        send(pidinter, :game)
+
       {:op, op}
-        when is_binary(op)
-        and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
-                              hechizo = accion_hechizo(opcion, hechizos)
-							  resultado = GameFacade.usarHechizoPropio(game, hechizo)
-							  
-							  IO.inspect(resultado)
+      when is_binary(op) and
+             op != "0\n" ->
+        {opcion, _} = Integer.parse(String.replace(op, "\n", ""))
+        hechizo = accion_hechizo(opcion, hechizos)
+        resultado = GameFacade.usarHechizoPropio(game, hechizo)
 
-							  case resultado do
-							    :victoria -> IO.puts("Enhorabuena, has ganado")
-											 pid = self()
-											 spawn(fn -> Interfaz.mensaje_propio(pid) end)
-							    _ ->  IO.puts("Hechizo utilizado!")
-								      IO.puts("Espere su turno...\n")
-							  end
+        IO.inspect(resultado)
+
+        case resultado do
+          :victoria ->
+            IO.puts("Enhorabuena, has ganado")
+            pid = self()
+            spawn(fn -> Interfaz.mensaje_propio(pid) end)
+
+          
+          x ->
+            IO.inspect(x)
+            IO.puts("Hechizo utilizado!")
+            IO.puts("Espere su turno...\n")
+        end
     end
   end
-  
-  
+
   def mensaje_propio(pid) do
-	send(pid, :end)
+    send(pid, :end)
   end
 
-
-
-
-  def accion_hechizo(1, [h | _])
-  do
+  def accion_hechizo(1, [h | _]) do
     h
   end
 
   def accion_hechizo(numero, [h | hechizos])
-    when is_integer(numero)
-    and numero > 1
-  do
+      when is_integer(numero) and
+             numero > 1 do
     accion_hechizo(numero - 1, hechizos)
   end
 
   def accion_hechizo(numero, [])
-    when is_integer(numero)
-    and numero > 1
-  do
+      when is_integer(numero) and
+             numero > 1 do
     :numeroInvalido
   end
-
-
 
   def jugada_partida(pidred, pidinter, "5\n", game) do
     IO.puts("Finalizando partida...\n")
@@ -188,33 +186,32 @@ defmodule Interfaz do
     send(pidinter, :game)
   end
 
+  # eliminar posteriormente el parametro borrar
 
-#eliminar posteriormente el parametro borrar
-
-
-# Se inicia la partida
+  # Se inicia la partida
 
   def op_juego("S\n", pidinter, game, pidred) do
     IO.puts("\n\nA jugar\n!")
-	
-	Network.acceptIncoming(pidred)
-	
-	
-	receive do
-		:yes -> send(pidinter, :game)
-                juego(pidred, pidinter, game)
-				send(pidinter, :menu)
-			    menu(pidinter, game, pidred)
 
-		:no -> IO.puts ("No se pudo establecer el combate")
-			   send(pidinter, :menu)
-			   menu(pidinter, game, pidred)
-	end 
+    Network.acceptIncoming(pidred)
+
+    receive do
+      :yes ->
+        send(pidinter, :game)
+        juego(pidred, pidinter, game)
+        send(pidinter, :menu)
+        menu(pidinter, game, pidred)
+
+      :no ->
+        IO.puts("No se pudo establecer el combate")
+        send(pidinter, :menu)
+        menu(pidinter, game, pidred)
+    end
   end
 
   def op_juego("N\n", pidinter, game, pidred) do
-	Network.rejectIncoming(pidred)
-    #send(node, :no)
+    Network.rejectIncoming(pidred)
+    # send(node, :no)
     send(pidinter, :menu)
     :ok
   end
@@ -243,7 +240,7 @@ defmodule Interfaz do
   end
 
   def operaciones("2\n", pidinter, game, pidred) do
-	Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
+    Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pidinter, :menu)
     menu(pidinter, game, pidred)
   end
@@ -251,7 +248,7 @@ defmodule Interfaz do
   def operaciones("3\n", pidinter, game, pidred) do
     Utils.mostrarClases(GameFacade.listarClases(game), 1)
     send(pidinter, :menu)
-	menu(pidinter, game, pidred)
+    menu(pidinter, game, pidred)
   end
 
   def operaciones("4\n", pidinter, _, _) do
