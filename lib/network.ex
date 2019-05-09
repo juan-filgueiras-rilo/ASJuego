@@ -244,8 +244,25 @@ defmodule Network do
     defp loop(pid_network, [peer | peers], player) do
       case attemptFight(peer, player) do
         {:established, enemyData} ->
-          GenServer.call(pid_network, {:establish_Game, {peer, enemyData}})
 
+          try do
+            addr = Monitor.get(peer);
+            {a,b,c,d} = addr;
+            addr = "#{a}.#{b}.#{c}.#{d}";
+            socket = Socket.TCP.connect!(addr, 8000);
+
+            {:ok, json} = JSON.encode(%{
+              "function" => "ACK fight"
+            });
+
+            Socket.Stream.send(socket, json);
+
+            Socket.Stream.close(socket);
+
+            GenServer.call(pid_network, {:establish_Game, {peer, enemyData}})
+          rescue
+            _ -> loop(pid_network, peers, player)
+          end
         :rejected ->
           loop(pid_network, peers, player)
       end
