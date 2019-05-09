@@ -139,7 +139,7 @@ defmodule Interfaz do
 							  case resultado do
 							    :victoria -> IO.puts("Enhorabuena, has ganado")
 											 pid = self()
-											 spawn(fn -> Init.mensaje_propio(pid))
+											 spawn(fn -> Interfaz.mensaje_propio(pid) end)
 							    _ ->  IO.puts("Hechizo utilizado!")
 								      IO.puts("Espere su turno...\n")
 									  juego(pidred, pidinter, game)
