@@ -59,8 +59,9 @@ defmodule Monitor do
           _ -> send(miPid, {:error});
         end
       end);
-
+      :timer.sleep(3000);
       receive do
+        
         {:received, json} ->
           {:ok, json} = JSON.decode(json);
           case json["result"] do
@@ -72,7 +73,7 @@ defmodule Monitor do
           :dead
         _x-> IO.inspect(_x);
               :dead
-        after 3000 -> 
+        after 1 -> 
           Process.exit(pid, :normal);
           :dead
       end

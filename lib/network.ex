@@ -207,14 +207,18 @@ defmodule Network do
   # Removes Peers when detects death
   defmodule DeathManager do
     def init(pid_network) do
-      spawn(fn -> loop(pid_network) end)
+      spawn(fn -> loop(pid_network, :unlinked) end)
     end
 
-    defp loop(pid_network) do
+    defp loop(pid_network, peer) do
       receive do
+        {:setpeer, peer} ->
+          loop(pid_network, peer)
+        {:unsetpeer} ->
+          loop(pid_network, :unlinked)
         {:dead, who} ->
           Network.remove_peer(pid_network, who)
-          loop(pid_network)
+          loop(pid_network, peer)
       end
     end
   end

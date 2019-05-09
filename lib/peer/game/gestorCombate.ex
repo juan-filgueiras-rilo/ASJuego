@@ -158,7 +158,7 @@ defmodule GestorCombate do
   end
 
   def iniciar(jugador, enemigo, turno) do
-    GenServer.start_link(GestorCombate, {jugador, enemigo, turno})
+    GenServer.start(GestorCombate, {jugador, enemigo, turno})
   end
 
   def usarHechizoPropio(juego, hechizo)

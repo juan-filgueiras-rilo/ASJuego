@@ -201,6 +201,7 @@ defmodule GameFacade do
          {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
 
       :derrota ->
+        send(callBackIU, :derrota);
         {:reply, :derrota, {callBackIU, clases, jugador, {:fueraCombate}}}
 
       :turnoInvalido ->
@@ -219,7 +220,7 @@ defmodule GameFacade do
   def iniciar(fileNameClasses, pidCallback)
       when is_binary(fileNameClasses) and
              is_pid(pidCallback) do
-    GenServer.start_link(GameFacade, {fileNameClasses, pidCallback})
+    GenServer.start(GameFacade, {fileNameClasses, pidCallback})
   end
 
   def cargar(juego, fileNamePlayer)
