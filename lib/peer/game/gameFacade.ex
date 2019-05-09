@@ -26,13 +26,13 @@ defmodule GameFacade do
       _ -> {:stop, :errorLoading}
     end
   end
-  
-  
-  
+
+
+
   def handle_call(:obtenerEnemigo, _from, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}) do
-	{:reply, GestorCombate.obtenerEnemigo(pidCombate), 
+	{:reply, GestorCombate.obtenerEnemigo(pidCombate),
 			{callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
-  
+
   end
 
   # Crear jugador
@@ -93,7 +93,7 @@ defmodule GameFacade do
 
 
     end
-    
+
   end
 
   @impl true
@@ -163,6 +163,8 @@ defmodule GameFacade do
         _from,
         {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}
       ) do
+
+    Network.hechizo_propio(pidCallbackRed,hechizo)
     resultado = GestorCombate.usarHechizoPropio(pidCombate, hechizo)
 
     case resultado do
@@ -178,6 +180,12 @@ defmodule GameFacade do
          {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
     end
   end
+  
+  #retirarseRemoto
+  def handle_call(:retirada {:callBackIU, clases, jugador, {combate, _,_}}) do
+    {{:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}}
+  end
+
 
   # usarHechizoRemoto
   def handle_call(
@@ -304,8 +312,8 @@ defmodule GameFacade do
         :estadoInvalido
     end
   end
-  
-  
+
+
   def obtenerEnemigo(juego) do
     try do
       {:ok, enemigo} = GenServer.call(juego, :obtenerEnemigo)
