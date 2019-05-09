@@ -117,7 +117,7 @@ defmodule Interfaz do
   def jugada_partida(pidred, pidinter, "4\n", game, rival) do
 
     IO.puts("Mostrando hechizos...\n")
-	nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
+	  nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     hechizos = GameFacade.getHechizosDisponibles(game)
     Utils.mostrarHechizosDetallados(hechizos, nivel, 1);
     #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
