@@ -58,6 +58,7 @@ defmodule Interfaz do
         IO.puts("Recibida conexion")
         IO.puts("Usted desea jugar? (S o N)")
         inicio_juego(pidinter, game, pidred)
+		send (pidinter, :menu)
         menu(pidinter, game, pidred)
     end
   end
@@ -87,6 +88,8 @@ defmodule Interfaz do
 		
       :end ->
         :ok
+		
+      :derrota -> :ok
     end
   end
 
