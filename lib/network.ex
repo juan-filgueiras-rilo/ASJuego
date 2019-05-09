@@ -445,7 +445,7 @@ defmodule Network do
   do
     case data do
       :notFound ->
-        send(uIPid, {:noGameAvailable});
+        send(uIPid, :noGameAvailable);
         {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
       {addr, enemyData} ->
 
