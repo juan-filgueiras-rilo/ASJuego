@@ -180,6 +180,12 @@ defmodule GameFacade do
          {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
     end
   end
+  
+  #retirarseRemoto
+  def handle_call(:retirada {:callBackIU, clases, jugador, {combate, _,_}}) do
+    {{:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}}
+  end
+
 
   # usarHechizoRemoto
   def handle_call(
