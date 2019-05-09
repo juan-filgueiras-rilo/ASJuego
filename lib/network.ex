@@ -18,6 +18,7 @@ defmodule Network do
       data = Socket.Stream.recv!(client)
       {:ok, jsonOptions} = JSON.decode(data)
 
+
       case jsonOptions["function"] do
         "status" ->
           {:ok, json} = JSON.encode(%{"result" => "ok"})
@@ -40,6 +41,10 @@ defmodule Network do
               player = Jugador.load(jsonOptions["player"]);
               send(finder, {:accepted, player});
           end
+        "ACK fight" ->
+          :ok;
+          #GenServer.call(pid_master, :ackFight)
+        
       end
 
       Socket.Stream.close!(client)
@@ -80,7 +85,7 @@ defmodule Network do
 
     defmodule Beacon do
       def init(socketsList) do
-        loop(socketsList)
+        loop(socketsList))
       end
 
       defp loop(socketsList) do
@@ -239,6 +244,8 @@ defmodule Network do
       end
     end
 
+    
+
     defp attemptFight(peer, player)
     do
       {a,b,c,d} = Monitor.get(peer);
@@ -253,12 +260,23 @@ defmodule Network do
       Socket.Stream.close!(socket);
 
 
+      loopAwaitAnswer(player)
+    end
+
+    defp loopAwaitAnswer(player) do
+      IO.puts("ESTO POR QUE?");
+      :timer.sleep(10000);
       receive do
-        {:accepted, player} -> {:established, player}
+        {:accepted, playerAccepted} -> 
+          case player do
+            playerAccepted -> {:established, player}
+            _ -> loopAwaitAnswer(player)
+          end
         :rejected -> :rejected
-      after 10000 -> :rejected
+      after 1 -> :rejected
       end
     end
+
   end
 
   # Loop de
@@ -430,6 +448,17 @@ defmodule Network do
         send(uIPid, {:noGameAvailable});
         {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
       {addr, enemyData} ->
+
+        {a,b,c,d} = Monitor.get(addr);
+        addr = "#{a}.#{b}.#{c}.#{d}";
+        socket = Socket.TCP.connect!(addr, 8000);
+
+        {:ok, json} = JSON.encode(%{
+          "function" => "ACK fight"
+        });
+        Socket.Stream.send(socket, json);
+        Socket.Stream.close!(socket);
+
         send(uIPid, {:playerFound});
 
         GameFacade.synCombate(gamePid);
