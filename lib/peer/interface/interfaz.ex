@@ -200,16 +200,15 @@ defmodule Interfaz do
 	
 	
 	receive do
-		:yes -> 
+		:yes -> send(pidinter, :game)
+                juego(pidred, pidinter, game)
+				send(pidinter, :menu)
+			    menu(pidinter, game, pidred)
+
 		:no -> IO.puts ("No se pudo establecer el combate")
+			   send(pidinter, :menu)
+			   menu(pidinter, game, pidred)
 	end 
-
-    send(pidinter, :game)
-
-	juego(pidred, pidinter, game)
-
-    send(pidinter, :menu)
-    menu(pidinter, game, pidred)
   end
 
   def op_juego("N\n", pidinter, game, pidred) do
