@@ -154,6 +154,8 @@ defmodule GameFacade do
   # Retirarse
   @impl true
   def handle_cast(:retirarse, {callBackIU, clases, jugador, {:combate, _, _}}) do
+    
+    send(callBackIU, :end);
     {:noreply, {callBackIU, clases, jugador, {:fueraCombate}}}
   end
 

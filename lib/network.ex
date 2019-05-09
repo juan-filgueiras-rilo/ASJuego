@@ -217,6 +217,9 @@ defmodule Network do
         {:unsetpeer} ->
           loop(pid_network, :unlinked)
         {:dead, who} ->
+          if (who == peer) do
+            
+          end;
           Network.remove_peer(pid_network, who)
           loop(pid_network, peer)
       end
@@ -489,23 +492,6 @@ defmodule Network do
      {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
-  def handle_call(
-        {:rejectIncoming},
-        _from,
-        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager,
-         {:incoming, socket, data, addr}}
-      ) do
-    {:ok, msg} =
-      JSON.encode(%{
-        "function" => "Reject fight"
-      })
-
-    Socket.Stream.send!(socket, msg)
-    Socket.Stream.close!(socket)
-
-    {:reply, :ok,
-     {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
-  end
 
 
 
