@@ -50,7 +50,6 @@ defmodule Network do
           hechizo = Hechizo.load(jsonOptions["hechizo"])
           Network.hechizo_recibido(pid_master, hechizo)
 
-
         "ACK fight" ->
           GenServer.call(pid_master, :ackIncomingFight)
       end

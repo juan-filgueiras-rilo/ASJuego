@@ -5,7 +5,7 @@ defmodule Initial do
   }
 
   def init() do
-    IO.puts("\n\nBIENVENIDO A XXXXXXXX\n\n")
+    IO.puts("\n\nBIENVENIDO A ADVENTURE GAME\n\n")
     {:ok, juego} = GameFacade.iniciar(@initial_state.gameData, self())
 
     if File.exists?(@initial_state.playerData) do

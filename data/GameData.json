@@ -1,7 +1,7 @@
 {
     "clases": [
         {
-            "nombre": "guerrero",
+            "nombre": "guerrerx",
             "constVid": 100,
             "linVid": 10,
             "cuadVid": 2,
@@ -42,7 +42,7 @@
             ]
         },
         {
-            "nombre": "hechizero",
+            "nombre": "hechizerx",
             "constVid": 90,
             "linVid": 7,
             "cuadVid": 1,
@@ -94,7 +94,7 @@
             ]
         },
         {
-            "nombre": "brujo",
+            "nombre": "brujx",
             "constVid": 90,
             "linVid": 7,
             "cuadVid": 1,

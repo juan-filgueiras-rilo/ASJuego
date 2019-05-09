@@ -2,11 +2,14 @@ defmodule Interfaz do
   def inicio(data) do
     mipid = self()
     pid = spawn(fn -> Interfaz.init(mipid, data) end)
-    IO.puts("Hola! Bienvenido a xxxxxxxxxxxx\n")
-    IO.puts("Introduzca 1 para iniciar un combate:")
-    IO.puts("Introduzca 2 para ver datos del jugador:")
-    IO.puts("Introduzca 3 para ver datos de las clases:")
-    IO.puts("Introduzca 4 para finalizar el juego\n")
+    IO.puts("*Pantalla de Carga finalizada*\n")
+    IO.puts("----------------------")
+    IO.puts("1) Iniciar un combate:")
+    IO.puts("2) Ver mis stats:")
+    IO.puts("3) Ver stats de clase:")
+    IO.puts("4) Finalizar el juego\n")
+    IO.puts("----------------------")
+
     recibir(pid)
   end
 
@@ -16,10 +19,13 @@ defmodule Interfaz do
 
     receive do
       :menu ->
-        IO.puts("Introduzca 1 para iniciar un combate:")
-        IO.puts("Introduzca 2 para ver datos del jugador:")
-        IO.puts("Introduzca 3 para ver datos de las clases:")
-        IO.puts("Introduzca 4 para finalizar el juego\n")
+        IO.puts("\n----------------------")
+        IO.puts("1) Iniciar un combate:")
+        IO.puts("2) Ver mis stats:")
+        IO.puts("3) Ver stats de clase:")
+        IO.puts("4) Finalizar el juego\n")
+        IO.puts("----------------------")
+
         recibir(pid)
 
       :exit ->
@@ -31,11 +37,14 @@ defmodule Interfaz do
         recibir(pid)
 
       :game ->
-        IO.puts("Introduzca 1 para ver hechizos disponibles:")
-        IO.puts("Introduzca 2 para ver mis datos:")
-        IO.puts("Introduzca 3 para ver datos del rival:")
-        IO.puts("Introduzca 4 para utilizar hechizo")
-        IO.puts("Introduzca 5 para huir del combate\n")
+        IO.puts("----------------------")
+        IO.puts("1) Ver hechizos disponibles:")
+        IO.puts("2) Ver mis stats:")
+        IO.puts("3) Ver stats del rival:")
+        IO.puts("4) Utilizar hechizo")
+        IO.puts("5) Huir del combate")
+        IO.puts("----------------------\n")
+
         recibir(pid)
 
       :hechizo ->
@@ -57,6 +66,7 @@ defmodule Interfaz do
 
       {:fightIncoming, data} ->
         IO.puts("Recibida conexion")
+        printRival(game)
         IO.puts("Usted desea jugar? (S o N)")
         inicio_juego(pidinter, game, pidred)
         send(pidinter, :menu)
@@ -78,6 +88,19 @@ defmodule Interfaz do
 
     receive do
       {:attack, hechizo} ->
+        player = GameFacade.obtenerJugador(game)
+
+        life_pre_spell = Jugador.getVida(player)
+        spell_name = Hechizo.getNombre(hechizo)
+
+        spell_force = Hechizo.getFuerza(hechizo, 1)
+
+        life_post_spell = Jugador.getVida(player)
+
+        IO.puts("\nTenias #{life_pre_spell + spell_force} puntos de vida \n")
+        IO.puts("Te usaron el hechizo #{spell_name} que tiene #{spell_force} puntos de fuerza\n")
+        IO.puts("Vida actual-> #{life_post_spell}\n")
+
         send(pidinter, :game)
         juego(pidred, pidinter, game)
 
@@ -93,6 +116,7 @@ defmodule Interfaz do
         :ok
 
       :derrota ->
+        IO.puts("\n Has perdido!! :( :( \n GIT GUD \n")
         :ok
     end
   end
@@ -139,19 +163,15 @@ defmodule Interfaz do
         hechizo = accion_hechizo(opcion, hechizos)
         resultado = GameFacade.usarHechizoPropio(game, hechizo)
 
-        IO.inspect(resultado)
-
         case resultado do
           :victoria ->
             IO.puts("Enhorabuena, has ganado")
             pid = self()
             spawn(fn -> Interfaz.mensaje_propio(pid) end)
 
-          
-          x ->
-            IO.inspect(x)
+          _ ->
             IO.puts("Hechizo utilizado!")
-            IO.puts("Espere su turno...\n")
+            IO.puts("Espere su turno...")
         end
     end
   end
@@ -197,6 +217,7 @@ defmodule Interfaz do
 
     receive do
       :yes ->
+        printRival(game)
         send(pidinter, :game)
         juego(pidred, pidinter, game)
         send(pidinter, :menu)
@@ -260,5 +281,10 @@ defmodule Interfaz do
     IO.puts("Opcion erronea...\n")
     send(pidinter, :menu)
     menu(pidinter, game, pidred)
+  end
+
+  defp printRival(game) do
+    {:ok, enemigo} = GameFacade.obtenerEnemigo(game)
+    IO.puts(Jugador.getNombre(enemigo) <> " te reta a un duelo!")
   end
 end

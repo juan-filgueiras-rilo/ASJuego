@@ -47,9 +47,24 @@ defmodule GameFacade do
       {:ok, jsonJugador} = File.read(fileNameJugador)
       {:ok, jsonJugador} = JSON.decode(jsonJugador)
 
+      name =
+        Enum.random([
+          "Pepe",
+          "Manolo",
+          "David",
+          "Laura",
+          "Sara",
+          "Javier Manuel",
+          "Alejandro",
+          "Lucia",
+          "Maria",
+          "Pablo"
+        ])
+
       jsonJugador = %{
         "jugador" => %{
-          "nombre" => jsonJugador["jugador"]["nombre"],
+          # jsonJugador["jugador"]["nombre"],
+          "nombre" => name,
           "nivel" => jsonJugador["jugador"]["nivel"],
           "vida" => jsonJugador["jugador"]["vida"],
           "clase" => Clase.save(_buscarClase(jsonJugador["jugador"]["clase"], clases))
@@ -195,7 +210,6 @@ defmodule GameFacade do
 
     case resultado do
       :continuar ->
-        IO.puts("PRINTEO DESDE LOGICA: " <> Kernel.inspect(callBackIU))
         send(callBackIU, {:attack, hechizo})
 
         {:reply, :continuar,
