@@ -466,9 +466,7 @@ defmodule Network do
 
     pidRed = self();
     spawn(fn -> 
-      IO.puts("Buenas")
       :timer.sleep(10000);
-      Io.puts("Adios")
       GenServer.call(pidRed, :noAckIncomingFight);
     end);
     
