@@ -84,9 +84,7 @@ defmodule Interfaz do
       :escapar ->
         IO.puts("\n\nEl jugador ha escapado")
         IO.puts("Partida finalizada\n\n")
-
-		#send(node, :end)
-
+		
       :end ->
         :ok
     end
@@ -134,12 +132,12 @@ defmodule Interfaz do
 							  resultado = GameFacade.usarHechizoPropio(game, hechizo)
 
 							  case resultado do
-							    :turnoInvalido -> IO.puts("Espere su turno...\n")
-							    :estadoInvalido -> IO.puts("Error: no estas en combate\n")
-							    :victoria -> IO.puts("VICTORIAAA")
+							    :victoria -> IO.puts("Enhorabuena, has ganado")
+										     send(pidinter, :menu)
 							    _ ->  IO.puts("Hechizo utilizado!")
 								      IO.puts("Espere su turno...\n")
 									  juego(pidred, pidinter, game)
+									  send (self(), :end)
 							  end
     end
   end
@@ -171,9 +169,6 @@ defmodule Interfaz do
   def jugada_partida(pidred, pidinter, "5\n", game) do
     IO.puts("Finalizando partida...\n")
     GameFacade.retirarse(game)
-
-	#Enviar mensaje al rival que me retiro
-    #send(node, :escapar)
   end
 
   def jugada_partida(pidred, pidinter, _, _) do
