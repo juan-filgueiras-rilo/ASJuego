@@ -114,7 +114,7 @@ defmodule Interfaz do
   end
 
 
-  def jugada_partida(pidred, pidinter, "4\n", game, rival) do
+  def jugada_partida(pidred, pidinter, "4\n", game) do
 
     IO.puts("Mostrando hechizos...\n")
 	nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
@@ -207,7 +207,6 @@ defmodule Interfaz do
   end
 
   def op_juego("N\n", pidinter, game, pidred) do
-
 	Network.rejectIncoming(pidred)
     #send(node, :no)
     send(pidinter, :menu)
