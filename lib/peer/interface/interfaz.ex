@@ -133,6 +133,8 @@ defmodule Interfaz do
         and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
                               hechizo = accion_hechizo(opcion, hechizos)
 							  resultado = GameFacade.usarHechizoPropio(game, hechizo)
+							  
+							  IO.inspect(resultado)
 
 							  case resultado do
 							    :victoria -> IO.puts("Enhorabuena, has ganado")
