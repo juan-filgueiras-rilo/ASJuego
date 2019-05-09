@@ -123,7 +123,7 @@ defmodule Interfaz do
     #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
     IO.puts("Introduzca 0 para volver atras");
 
-	send pidred, :hechizo
+	send pidinter, :hechizo
 
 	receive do
       {:op, "0\n"} -> send pidred, :game
