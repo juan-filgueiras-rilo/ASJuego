@@ -483,33 +483,7 @@ defmodule Network do
      {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
-  def handle_call(
-        :get_superPeers,
-        _from,
-        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
-      ) do
-    {:reply, {:ok, superPeers},
-     {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-  end
 
-
-
-
-  def handle_call(:get_peers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
-    {:reply, peers |> Enum.map(fn x -> Monitor.get(x) end), {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-  end
-
-  def handle_call(:get_superpeers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
-    {:reply, superPeers |> Enum.map(fn x -> Monitor.get(x) end), {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-  end
-
-  def handle_call(:count, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
-    {:reply, length(peers), {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-  end
-
-  def handle_call(:get_superPeers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
-    {:reply, {:ok, superPeers}, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-  end
 
 
   def handle_call({:rejectIncoming}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:incoming, socket, data, addr}})
@@ -674,9 +648,7 @@ defmodule Network do
     GenServer.call(pid_network, :count)
   end
 
-  def get_superpeers(pid_network) do
-    GenServer.call(pid_network, :get_superPeers)
-  end
+
 
   def set_game_pid(pid_network, gamePid) do
     GenServer.call(pid_network, {:setGamePid, gamePid})
