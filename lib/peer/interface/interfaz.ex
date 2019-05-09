@@ -114,7 +114,7 @@ defmodule Interfaz do
   end
 
 
-  def jugada_partida(pidred, pidinter, "4\n", game, rival) do
+  def jugada_partida(pidred, pidinter, "4\n", game) do
 
     IO.puts("Mostrando hechizos...\n")
 	  nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
@@ -123,10 +123,10 @@ defmodule Interfaz do
     #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
     IO.puts("Introduzca 0 para volver atras");
 
-	send pidred, :hechizo
+	send pidinter, :hechizo
 
 	receive do
-      {:op, "0\n"} -> send pidred, :game
+      {:op, "0\n"} -> send(pidinter, :game)
       {:op, op}
         when is_binary(op)
         and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
@@ -195,18 +195,24 @@ defmodule Interfaz do
 
   def op_juego("S\n", pidinter, game, pidred) do
     IO.puts("\n\nA jugar\n!")
+	
+	Network.acceptIncoming(pidred)
+	
+	
+	receive do
+		:yes -> send(pidinter, :game)
+                juego(pidred, pidinter, game)
+				send(pidinter, :menu)
+			    menu(pidinter, game, pidred)
 
-    send(pidinter, :game)
-
-	juego(pidred, pidinter, game)
-
-    send(pidinter, :menu)
-    menu(pidinter, game, pidred)
+		:no -> IO.puts ("No se pudo establecer el combate")
+			   send(pidinter, :menu)
+			   menu(pidinter, game, pidred)
+	end 
   end
 
   def op_juego("N\n", pidinter, game, pidred) do
-
-	#Enviar mensaje al rival de que no qu
+	Network.rejectIncoming(pidred)
     #send(node, :no)
     send(pidinter, :menu)
     :ok
