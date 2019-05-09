@@ -123,7 +123,7 @@ defmodule Interfaz do
     #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
     IO.puts("Introduzca 0 para volver atras");
 
-	send pidred, :hechizo
+	send pidinter, :hechizo
 
 	receive do
       {:op, "0\n"} -> send pidred, :game
@@ -197,13 +197,18 @@ defmodule Interfaz do
     IO.puts("\n\nA jugar\n!")
 	
 	Network.acceptIncoming(pidred)
+	
+	
+	receive do
+		:yes -> send(pidinter, :game)
+                juego(pidred, pidinter, game)
+				send(pidinter, :menu)
+			    menu(pidinter, game, pidred)
 
-    send(pidinter, :game)
-
-	juego(pidred, pidinter, game)
-
-    send(pidinter, :menu)
-    menu(pidinter, game, pidred)
+		:no -> IO.puts ("No se pudo establecer el combate")
+			   send(pidinter, :menu)
+			   menu(pidinter, game, pidred)
+	end 
   end
 
   def op_juego("N\n", pidinter, game, pidred) do
