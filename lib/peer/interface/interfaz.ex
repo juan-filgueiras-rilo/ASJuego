@@ -23,8 +23,8 @@ defmodule Interfaz do
         IO.puts("1) Iniciar un combate:")
         IO.puts("2) Ver mis stats:")
         IO.puts("3) Ver stats de clase:")
-        IO.puts("4) Finalizar el juego\n")
-        IO.puts("----------------------")
+        IO.puts("4) Finalizar el juego")
+        IO.puts("----------------------\n")
 
         recibir(pid)
 
@@ -66,7 +66,7 @@ defmodule Interfaz do
 
       {:fightIncoming, data} ->
         IO.puts("Recibida conexion")
-        printRival(game)
+
         IO.puts("Usted desea jugar? (S o N)")
         inicio_juego(pidinter, game, pidred)
         send(pidinter, :menu)
@@ -217,7 +217,6 @@ defmodule Interfaz do
 
     receive do
       :yes ->
-        printRival(game)
         send(pidinter, :game)
         juego(pidred, pidinter, game)
         send(pidinter, :menu)

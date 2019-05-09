@@ -310,7 +310,6 @@ defmodule Network do
 
   # Loop de
   def init({uIPid}) do
-    IO.puts("Lanzado")
     SocketNetworking.init(self())
     PeerAutodetection.init(self())
     death_manager = DeathManager.init(self())

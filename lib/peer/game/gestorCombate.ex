@@ -17,7 +17,7 @@ defmodule GestorCombate do
     end
 
     defp _reducirEnfriamiento([], nuevaLista)
-    do  
+    do
         nuevaLista
     end
 
@@ -25,7 +25,7 @@ defmodule GestorCombate do
         when enfriamientoRestante > 1
     do
         _reducirEnfriamiento(hechizos, [{enfriamientoRestante - 1, hechizo} | nuevaLista])
-    
+
     end
 
     defp _reducirEnfriamiento([{1, hechizo} | hechizos], nuevaLista )
@@ -61,14 +61,14 @@ defmodule GestorCombate do
   def init({jugador, enemigo, turno}) do
     {:ok, {jugador, enemigo, turno, [], [], [], []}}
   end
-  
+
   def handle_call(:obtenerEnemigo, _from, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}) do
 	{:reply, {:ok, enemigo}, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
   end
-  
-  
-  
-  
+
+
+
+
   def handle_call(
         {:hechizoPropio, hechizo},
         _from,
@@ -96,7 +96,7 @@ defmodule GestorCombate do
               {:stop, {:shutdown, :victoria}, :victoria, {}}
           end
         end
-        
+
 
       :turnoEnemigo ->
         {:reply, :turnoInvalido, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigos}}
@@ -139,7 +139,7 @@ defmodule GestorCombate do
   do
     hechizos = Clase.getHechizosDisponibles(Jugador.getClase(jugador), Jugador.getNivel(jugador));
 
-    hechizosDisponibles = 
+    hechizosDisponibles =
       Enum.filter(hechizos, fn x -> not Enum.any?(enfrPropios, fn {_,b} -> b == x end) end);
 
     {:reply, hechizosDisponibles, {jugador, enemigo, turno, efectosPropios, efectosEnemigo, enfrPropios, enfrEnemigo}}
@@ -166,12 +166,12 @@ defmodule GestorCombate do
              is_pid(juego) do
     GenServer.call(juego, {:hechizoPropio, hechizo})
   end
-  
-  def obtenerEnemigo(juego) do  
+
+  def obtenerEnemigo(juego) do
 	GenServer.call(juego, :obtenerEnemigo)
   end
-  
-  
+
+
 
   def usarHechizoRemoto(juego, hechizo)
       when is_tuple(hechizo) and
@@ -182,7 +182,7 @@ defmodule GestorCombate do
   def getHechizosDisponibles(juego)
     when is_pid(juego)
   do
-    GenServer.call(juego, {:hechizosDisponibles});    
+    GenServer.call(juego, {:hechizosDisponibles});
   end
 
   def obtenerJugador(juego)
