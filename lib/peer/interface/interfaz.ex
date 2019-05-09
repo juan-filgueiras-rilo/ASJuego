@@ -138,7 +138,8 @@ defmodule Interfaz do
 
 							  case resultado do
 							    :victoria -> IO.puts("Enhorabuena, has ganado")
-											 send(self(), :end)
+											 pid = self()
+											 spawn(fn -> send(pid, :end))
 							    _ ->  IO.puts("Hechizo utilizado!")
 								      IO.puts("Espere su turno...\n")
 									  juego(pidred, pidinter, game)
