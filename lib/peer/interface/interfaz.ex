@@ -64,7 +64,7 @@ defmodule Interfaz do
       {:op, op} ->
         operaciones(op, pidinter, game, pidred)
 
-      {:fightIncoming, data} ->
+      {:fightIncoming, _data} ->
         IO.puts("Recibida conexion")
 
         IO.puts("Usted desea jugar? (S o N)")
@@ -121,7 +121,7 @@ defmodule Interfaz do
     end
   end
 
-  def jugada_partida(pidred, pidinter, "1\n", game) do
+  def jugada_partida(_pidred, pidinter, "1\n", game) do
     IO.puts("Viendo hechizos disponibles...\n")
 
     nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
@@ -129,19 +129,19 @@ defmodule Interfaz do
     send(pidinter, :game)
   end
 
-  def jugada_partida(pidred, pidinter, "2\n", game) do
+  def jugada_partida(_pidred, pidinter, "2\n", game) do
     Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pidinter, :game)
   end
 
-  def jugada_partida(pidred, pidinter, "3\n", game) do
+  def jugada_partida(_pidred, pidinter, "3\n", game) do
     IO.puts("Viendo datos rival...\n")
     enemigo = GameFacade.obtenerEnemigo(game)
     Utils.mostrarJugador(enemigo, 1)
     send(pidinter, :game)
   end
 
-  def jugada_partida(pidred, pidinter, "4\n", game) do
+  def jugada_partida(_pidred, pidinter, "4\n", game) do
     IO.puts("Mostrando hechizos...\n")
     nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     hechizos = GameFacade.getHechizosDisponibles(game)
@@ -184,7 +184,7 @@ defmodule Interfaz do
     h
   end
 
-  def accion_hechizo(numero, [h | hechizos])
+  def accion_hechizo(numero, [_h | hechizos])
       when is_integer(numero) and
              numero > 1 do
     accion_hechizo(numero - 1, hechizos)
@@ -196,12 +196,12 @@ defmodule Interfaz do
     :numeroInvalido
   end
 
-  def jugada_partida(pidred, pidinter, "5\n", game) do
+  def jugada_partida(_pidred, _pidinter, "5\n", game) do
     IO.puts("Finalizando partida...\n")
     GameFacade.retirarse(game)
   end
 
-  def jugada_partida(pidred, pidinter, _, _) do
+  def jugada_partida(_pidred, pidinter, _, _) do
     IO.puts("Opcion erronea..\n")
     send(pidinter, :game)
   end
@@ -229,7 +229,7 @@ defmodule Interfaz do
     end
   end
 
-  def op_juego("N\n", pidinter, game, pidred) do
+  def op_juego("N\n", pidinter, _game, pidred) do
     Network.rejectIncoming(pidred)
     # send(node, :no)
     send(pidinter, :menu)
@@ -282,7 +282,7 @@ defmodule Interfaz do
     menu(pidinter, game, pidred)
   end
 
-  defp printRival(game) do
+  defp _printRival(game) do
     {:ok, enemigo} = GameFacade.obtenerEnemigo(game)
     IO.puts(Jugador.getNombre(enemigo) <> " te reta a un duelo!")
   end

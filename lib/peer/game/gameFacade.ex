@@ -35,10 +35,6 @@ defmodule GameFacade do
   end
 
   # Crear jugador
-  @impl true
-  def handle_cast({:crearJugador, jugador}, {:iniciando, pidCallback, clases}) do
-    {:noreply, {pidCallback, clases, jugador, {:fueraCombate}}}
-  end
 
   # Cargar jugador
   @impl true
@@ -166,11 +162,6 @@ defmodule GameFacade do
   end
 
   # Retirarse
-  @impl true
-  def handle_cast(:retirarse, {callBackIU, clases, jugador, {:combate, _, _}}) do
-    send(callBackIU, :end)
-    {:noreply, {callBackIU, clases, jugador, {:fueraCombate}}}
-  end
 
   # usarHechizoPropio
   def handle_call(
@@ -196,7 +187,7 @@ defmodule GameFacade do
   end
 
   # retirarseRemoto
-  def handle_call(:retirada, {callBackIU, clases, jugador, {combate, _, _}}) do
+  def handle_call(:retirada, {callBackIU, clases, jugador, {_combate, _, _}}) do
     {:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}
   end
 
@@ -232,6 +223,17 @@ defmodule GameFacade do
       ) do
     resultado = GestorCombate.getHechizosDisponibles(pidCombate)
     {:reply, resultado, {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
+  end
+
+  @impl true
+  def handle_cast({:crearJugador, jugador}, {:iniciando, pidCallback, clases}) do
+    {:noreply, {pidCallback, clases, jugador, {:fueraCombate}}}
+  end
+
+  @impl true
+  def handle_cast(:retirarse, {callBackIU, clases, jugador, {:combate, _, _}}) do
+    send(callBackIU, :end)
+    {:noreply, {callBackIU, clases, jugador, {:fueraCombate}}}
   end
 
   def iniciar(fileNameClasses, pidCallback)

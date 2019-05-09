@@ -4,25 +4,22 @@ defmodule Monitor do
   end
 
   def get(monitor_pid) do
-    
     if Process.alive?(monitor_pid) do
-      send(monitor_pid, {:get_pid, self()});
+      send(monitor_pid, {:get_pid, self()})
+
       receive do
         {:ok, ip_addr} ->
           ip_addr
-  
-        #_ ->
-        #  :error
-  
+
+          # _ ->
+          #  :error
+
           # code
-      
       end
     else
       :error
     end
-    
   end
-
 
   defp loop(ip_addr, master_pid) do
     receive do
@@ -51,44 +48,49 @@ defmodule Monitor do
   defp check(ip_addr) do
     try do
       {:ok, json} = JSON.encode(%{"function" => "status"})
-      {a,b,c,d} = ip_addr;
-      ip_addr = "#{a}.#{b}.#{c}.#{d}";
-      {:ok, socket} = Socket.TCP.connect(ip_addr, 8000);
-      Socket.Stream.send!(socket,json);
-      
-      miPid = self();
-      pid = spawn(fn -> 
-        try do
-          {:ok, json} = Socket.Stream.recv(socket);
-          send(miPid, {:received, json});
-        rescue
-          _ -> send(miPid, {:error});
-        end
-      end);
-      :timer.sleep(3000);
+      {a, b, c, d} = ip_addr
+      ip_addr = "#{a}.#{b}.#{c}.#{d}"
+      {:ok, socket} = Socket.TCP.connect(ip_addr, 8000)
+      Socket.Stream.send!(socket, json)
+
+      miPid = self()
+
+      pid =
+        spawn(fn ->
+          try do
+            {:ok, json} = Socket.Stream.recv(socket)
+            send(miPid, {:received, json})
+          rescue
+            _ -> send(miPid, {:error})
+          end
+        end)
+
+      :timer.sleep(3000)
+
       receive do
-        
         {:received, json} ->
-          {:ok, json} = JSON.decode(json);
+          {:ok, json} = JSON.decode(json)
+
           case json["result"] do
             "ok" ->
               :alive
-            _ -> :dead
-          end
-        {:error} -> 
-          :dead
-        _x-> IO.inspect(_x);
+
+            _ ->
               :dead
-        after 1 -> 
-          Process.exit(pid, :normal);
+          end
+
+        {:error} ->
+          :dead
+
+        _ ->
+          :dead
+      after
+        1 ->
+          Process.exit(pid, :normal)
           :dead
       end
-
-
-
-      
     rescue
-      _ -> 
+      _ ->
         :dead
     end
   end

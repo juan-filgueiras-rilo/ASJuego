@@ -110,7 +110,7 @@ defmodule Network do
 
       defp announce(socketsList) do
         socketsList
-        |> Enum.map(fn {socket, broadcast} ->
+        |> Enum.map(fn {socket, _broadcast} ->
           Socket.Datagram.send!(socket, "PEER", {{255, 255, 255, 255}, 8000})
         end)
       end
@@ -135,8 +135,8 @@ defmodule Network do
             }
           end)
 
-        listener = spawn(fn -> Listener.init(pidCallback, listenSocket) end)
-        beacon = spawn(fn -> Beacon.init(sendSocketsList) end)
+        _listener = spawn(fn -> Listener.init(pidCallback, listenSocket) end)
+        _beacon = spawn(fn -> Beacon.init(sendSocketsList) end)
       rescue
         x -> IO.puts("Imposible cargar sistema de autodeteccion: " <> Kernel.inspect(x))
       end
@@ -249,7 +249,7 @@ defmodule Network do
       spawn(fn -> loop(pid_network, list, player) end)
     end
 
-    defp loop(pid_network, [], player) do
+    defp loop(pid_network, [], _player) do
       GenServer.call(pid_network, {:establish_Game, :notFound})
     end
 
@@ -320,7 +320,7 @@ defmodule Network do
     super_list = init_superpeers(super_death_manager)
 
     # Necesario en estado si queremeos managear SuperPeers
-    superPeerManager = SuperPeerManager.init(self())
+    _superPeerManager = SuperPeerManager.init(self())
 
     {:ok, {uIPid, :unlinked, super_list, [], death_manager, super_death_manager, :notPaired}}
   end
@@ -343,7 +343,7 @@ defmodule Network do
         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
       ) do
     case pair do
-      {:awaitingACK, addr} ->
+      {:awaitingACK, _addr} ->
         # Le comunico a la interfaz que entramos en combate
         send(uIPid, :no)
 
@@ -398,7 +398,7 @@ defmodule Network do
       ) do
     pair2 =
       case pair do
-        {:finding, x} -> :finding
+        {:finding, _x} -> :finding
         x -> x
       end
 
@@ -506,7 +506,7 @@ defmodule Network do
         {:rejectIncoming},
         _from,
         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager,
-         {:incoming, socket, data, addr}}
+         {:incoming, _socket, _data, addr}}
       ) do
     {:ok, msg} =
       JSON.encode(%{
@@ -527,7 +527,7 @@ defmodule Network do
         {:acceptIncoming},
         _from,
         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager,
-         {:incoming, socket, data, addr}}
+         {:incoming, _socket, data, addr}}
       ) do
     {_pid, player} = GameFacade.ackCombate(gamePid, self(), data)
 
@@ -631,6 +631,50 @@ defmodule Network do
     {:reply, :ok, {uIPid, pid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
+  def handle_call(
+        {:sendHechizoPropio, hechizo},
+        _from,
+        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
+      ) do
+    case pair do
+      {:paired, address} ->
+        {:ok, json} =
+          JSON.encode(%{"function" => "usarHechizo", "hechizo" => Hechizo.save(hechizo)})
+
+        address =
+          case address do
+            x when is_binary(x) ->
+              x
+
+            x ->
+              addr = Monitor.get(x)
+              {a, b, c, d} = addr
+              "#{a}.#{b}.#{c}.#{d}"
+          end
+
+        socket = Socket.TCP.connect!({address, 8000})
+        socket |> Socket.Stream.send!(json)
+
+        Socket.close(socket)
+
+      _ ->
+        :error
+    end
+
+    {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
+  end
+
+
+  def handle_call(
+        {:recibir_hechizo, hechizo},
+        _from,
+        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
+      ) do
+    resultado = GameFacade.usarHechizoRemoto(gamePid, hechizo)
+    send(uIPid, resultado)
+    {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
+  end
+
   def set_GamePid(pid_network, gamePid) do
     GenServer.call(pid_network, {:setGamePid, gamePid})
   end
@@ -683,51 +727,8 @@ defmodule Network do
     GenServer.call(pid_network, {:sendHechizoPropio, hechizo})
   end
 
-  def handle_call(
-        {:sendHechizoPropio, hechizo},
-        _from,
-        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
-      ) do
-    case pair do
-      {:paired, address} ->
-        {:ok, json} =
-          JSON.encode(%{"function" => "usarHechizo", "hechizo" => Hechizo.save(hechizo)})
-
-        address =
-          case address do
-            x when is_binary(x) ->
-              x
-
-            x ->
-              addr = Monitor.get(x)
-              {a, b, c, d} = addr
-              "#{a}.#{b}.#{c}.#{d}"
-          end
-
-        socket = Socket.TCP.connect!({address, 8000})
-        socket |> Socket.Stream.send!(json)
-
-        Socket.close(socket)
-
-      _ ->
-        :error
-    end
-
-    {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-  end
-
   def hechizo_recibido(pid_network, hechizo) do
     GenServer.call(pid_network, {:recibir_hechizo, hechizo})
-  end
-
-  def handle_call(
-        {:recibir_hechizo, hechizo},
-        _from,
-        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
-      ) do
-    resultado = GameFacade.usarHechizoRemoto(gamePid, hechizo)
-    send(uIPid, resultado)
-    {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
   def initialize(uIPid) do

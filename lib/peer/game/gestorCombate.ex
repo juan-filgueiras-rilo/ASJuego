@@ -1,12 +1,12 @@
 defmodule GestorCombate do
   use GenServer
 
-    defp _getHechizo({enfriamientoRestante, hechizo})
+    defp _getHechizo({_enfriamientoRestante, hechizo})
     do
         hechizo
     end
 
-    defp _getHechizos([{enfriamientoRestante, hechizo} | enfriamiento], salida)
+    defp _getHechizos([{_enfriamientoRestante, hechizo} | enfriamiento], salida)
     do
         _getHechizos(enfriamiento, [hechizo | salida])
     end
@@ -28,16 +28,16 @@ defmodule GestorCombate do
 
     end
 
-    defp _reducirEnfriamiento([{1, hechizo} | hechizos], nuevaLista )
+    defp _reducirEnfriamiento([{1, _hechizo} | hechizos], nuevaLista )
     do
         _reducirEnfriamiento(hechizos, nuevaLista)
     end
 
-  defp _getHechizoDeEfecto({duracionRestante, hechizo}) do
+  defp _getHechizoDeEfecto({_duracionRestante, hechizo}) do
     hechizo
   end
 
-  defp _getHechizosDeEfectos([{duracionRestante, hechizo} | efectos], salida) do
+  defp _getHechizosDeEfectos([{_duracionRestante, hechizo} | efectos], salida) do
     _getHechizosDeEfectos(efectos, [hechizo | salida])
   end
 
@@ -54,7 +54,7 @@ defmodule GestorCombate do
     _reducirDuracionesEfectos(hechizos, [{duracionRestante - 1, hechizo} | nuevaLista])
   end
 
-  defp _reducirDuracionesEfectos([{1, hechizo} | hechizos], nuevaLista) do
+  defp _reducirDuracionesEfectos([{1, _hechizo} | hechizos], nuevaLista) do
     _reducirDuracionesEfectos(hechizos, nuevaLista)
   end
 

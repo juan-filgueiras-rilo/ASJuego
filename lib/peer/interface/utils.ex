@@ -51,24 +51,30 @@ defmodule Utils do
     mostrarClase(clase, tabs)
   end
 
-  def mostrarClases([], tabs) do
+  def mostrarClases([], _tabs) do
     :ok
   end
 
-  def mostrarHechizoDetallado(hechizo, nivel, tabs) do
+  def mostrarHechizoDetallado(hechizo, nivel, tabs, counter) do
     tabsString = getTabs(tabs)
+    IO.puts("    #{counter})")
+
     IO.puts(tabsString <> "Nombre: " <> Kernel.inspect(Hechizo.getNombre(hechizo)))
     IO.puts(tabsString <> "Tipo: " <> Kernel.inspect(Hechizo.getTipo(hechizo)))
     IO.puts(tabsString <> "Fuerza: " <> Kernel.inspect(Hechizo.getFuerza(hechizo, nivel)))
     IO.puts(tabsString <> "Duracion: " <> Kernel.inspect(Hechizo.getDuracion(hechizo)))
-    #IO.puts(tabsString <> "Nivel min: " <> Kernel.inspect(Hechizo.getNivelMin(hechizo, nivel)))
-	
-	IO.puts("\n");
-	
-	##Añadi un \n al final, borralo cuando funcione el ultimo print y añadeselo a el
+    # IO.puts(tabsString <> "Nivel min: " <> Kernel.inspect(Hechizo.getNivelMin(hechizo, nivel)))
+
+    IO.puts("\n")
+
+    ## Añadi un \n al final, borralo cuando funcione el ultimo print y añadeselo a el
   end
 
   def mostrarHechizosDetallados(hechizos, nivel, tabs) do
-    hechizos = Enum.map(hechizos, fn x -> mostrarHechizoDetallado(x, nivel, tabs) end)
+    hechizos
+    |> Enum.with_index()
+    |> Enum.map(fn {x, index} ->
+      mostrarHechizoDetallado(x, nivel, tabs, index + 1)
+    end)
   end
 end

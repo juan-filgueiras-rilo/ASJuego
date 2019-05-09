@@ -91,7 +91,7 @@ defmodule Jugador do
     aplicarHechizo(jugador, hd(hechizos), enemigo)
   end
 
-  def subirNivel({nombre, nivel, clase, vida}) do
+  def subirNivel({nombre, nivel, clase, _vida}) do
     {nombre, nivel + 1, clase, Clase.getVidaMax(clase, nivel + 1)}
   end
 end
