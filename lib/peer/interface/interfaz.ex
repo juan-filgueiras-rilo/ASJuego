@@ -139,12 +139,17 @@ defmodule Interfaz do
 							  case resultado do
 							    :victoria -> IO.puts("Enhorabuena, has ganado")
 											 pid = self()
-											 spawn(fn -> send(pid, :end))
+											 spawn(fn -> Init.mensaje_propio(pid))
 							    _ ->  IO.puts("Hechizo utilizado!")
 								      IO.puts("Espere su turno...\n")
 									  juego(pidred, pidinter, game)
 							  end
     end
+  end
+  
+  
+  def mensaje_propio(pid) do
+	send(pid, :end)
   end
 
 
