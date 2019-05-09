@@ -176,6 +176,16 @@ defmodule Interfaz do
     end
   end
 
+  def jugada_partida(_pidred, _pidinter, "5\n", game) do
+    IO.puts("Finalizando partida...\n")
+    GameFacade.retirarse(game)
+  end
+
+  def jugada_partida(_pidred, pidinter, _, _) do
+    IO.puts("Opcion erronea..\n")
+    send(pidinter, :game)
+  end
+
   def mensaje_propio(pid) do
     send(pid, :end)
   end
@@ -196,16 +206,6 @@ defmodule Interfaz do
     :numeroInvalido
   end
 
-  def jugada_partida(_pidred, _pidinter, "5\n", game) do
-    IO.puts("Finalizando partida...\n")
-    GameFacade.retirarse(game)
-  end
-
-  def jugada_partida(_pidred, pidinter, _, _) do
-    IO.puts("Opcion erronea..\n")
-    send(pidinter, :game)
-  end
-
   # eliminar posteriormente el parametro borrar
 
   # Se inicia la partida
@@ -214,6 +214,7 @@ defmodule Interfaz do
     IO.puts("\n\nA jugar\n!")
 
     Network.acceptIncoming(pidred)
+    IO.puts(Utils.rivalName(game) <> " te ha retado a un duelo!")
 
     receive do
       :yes ->
@@ -280,10 +281,5 @@ defmodule Interfaz do
     IO.puts("Opcion erronea...\n")
     send(pidinter, :menu)
     menu(pidinter, game, pidred)
-  end
-
-  defp _printRival(game) do
-    {:ok, enemigo} = GameFacade.obtenerEnemigo(game)
-    IO.puts(Jugador.getNombre(enemigo) <> " te reta a un duelo!")
   end
 end

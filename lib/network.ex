@@ -664,7 +664,6 @@ defmodule Network do
     {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
-
   def handle_call(
         {:recibir_hechizo, hechizo},
         _from,

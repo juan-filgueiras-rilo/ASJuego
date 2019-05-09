@@ -77,4 +77,10 @@ defmodule Utils do
       mostrarHechizoDetallado(x, nivel, tabs, index + 1)
     end)
   end
+
+  def rivalName(game) do
+    enemigo =
+      GameFacade.obtenerEnemigo(game)
+      |> Jugador.getNombre()
+  end
 end
