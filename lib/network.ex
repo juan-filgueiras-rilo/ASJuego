@@ -49,6 +49,8 @@ defmodule Network do
         "usarHechizo" ->
           hechizo = Hechizo.load(jsonOptions["hechizo"])
           Network.hechizo_recibido(pid_master, hechizo)
+        "ACK fight"  -> 
+          GenServer.call(pid_master, :ackIncomingFight)
       end
 
       Socket.Stream.close!(client)
@@ -269,24 +271,28 @@ defmodule Network do
     end
 
     defp attemptFight(peer, player) do
-      {a, b, c, d} = Monitor.get(peer)
-      addr = "#{a}.#{b}.#{c}.#{d}"
-      socket = Socket.TCP.connect!(addr, 8000)
+      try do
+        {a, b, c, d} = Monitor.get(peer)
+        addr = "#{a}.#{b}.#{c}.#{d}"
+        socket = Socket.TCP.connect!(addr, 8000)
 
-      {:ok, json} =
-        JSON.encode(%{
-          "function" => "query fight",
-          "player" => Jugador.save(player)
-        })
+        {:ok, json} =
+          JSON.encode(%{
+            "function" => "query fight",
+            "player" => Jugador.save(player)
+          })
 
-      Socket.Stream.send(socket, json)
-      Socket.Stream.close!(socket)
+        Socket.Stream.send(socket, json)
+        Socket.Stream.close!(socket)
 
-      receive do
-        {:accepted, player} -> {:established, player}
-        :rejected -> :rejected
-      after
-        10000 -> :rejected
+        receive do
+          {:accepted, player} -> {:established, player}
+          :rejected -> :rejected
+        after
+          10000 -> :rejected
+        end
+      rescue
+        _ -> :rejected
       end
     end
   end
@@ -320,6 +326,28 @@ defmodule Network do
     |> Enum.map(fn x -> x["ip"] end)
     |> Enum.map(fn x -> Monitor.init(String.to_atom("super@" <> "#{x}"), super_death_manager) end)
   end
+
+  def handle_call(:noAckIncomingFight, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
+    case pair do
+      {:awaitingACK, addr} -> 
+        send(uIPid, :no) # Le comunico a la interfaz que entramos en combate
+        {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
+      _ -> {:reply, :error, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
+    end
+    
+  end
+
+
+  def handle_call(:ackIncomingFight, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
+    case pair do
+      {:awaitingACK, addr} -> 
+        send(uIPid, :yes) # Le comunico a la interfaz que entramos en combate
+        {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr}}}
+      _ -> {:reply, :error, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
+    end
+    
+  end
+
 
   def handle_call(
         :getEnemyFinder,
@@ -475,19 +503,7 @@ defmodule Network do
      {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
   end
 
-  def handle_call(
-        {:acceptIncoming},
-        _from,
-        {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager,
-         {:incoming, socket, data, addr}}
-      ) do
-    {_pid, player} = GameFacade.ackCombate(gamePid, self(), data)
 
-    {:ok, msg} =
-      JSON.encode(%{
-        "function" => "Accept fight",
-        "player" => Jugador.save(player)
-      })
 
   def handle_call(:get_peers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     {:reply, peers |> Enum.map(fn x -> Monitor.get(x) end), {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
@@ -540,14 +556,12 @@ defmodule Network do
 
     pidRed = self();
     spawn(fn -> 
-      IO.puts("Buenas")
       :timer.sleep(10000);
-      Io.puts("Adios")
       GenServer.call(pidRed, :noAckIncomingFight);
     end);
 
     {:reply, :ok,
-     {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr}}}
+     {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:awaitingACK, addr}}}
   end
 
   def handle_call(
@@ -577,13 +591,13 @@ defmodule Network do
       ) do
     case data do
       :notFound ->
-        send(uIPid, {:noGameAvailable})
+        send(uIPid, :noGameAvailable)
 
         {:reply, :ok,
          {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
 
       {addr, enemyData} ->
-        send(uIPid, {:playerFound})
+        send(uIPid, :playerFound)
 
         GameFacade.synCombate(gamePid)
         GameFacade.ackCombate(gamePid, self(), enemyData)
@@ -689,15 +703,13 @@ defmodule Network do
       ) do
     case pair do
       {:paired, address} ->
-        {a, b, c, d} = address
-        addr = "#{a}.#{b}.#{c}.#{d}"
+       
 
         {:ok, json} =
           JSON.encode(%{"function" => "usarHechizo", "hechizo" => Hechizo.save(hechizo)})
 
-        socket =
-          Socket.TCP.connect({addr, 8000})
-          |> Socket.Stream.send!(json)
+        socket =  Socket.TCP.connect!({address, 8000})
+        socket |> Socket.Stream.send!(json)
 
         Socket.close(socket)
 
