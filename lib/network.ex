@@ -740,7 +740,7 @@ defmodule Network do
         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
       ) do
     GameFacade.usarHechizoRemoto(gamePid, hechizo)
-    send(uIPid, {:attack, hechizo})
+    
     {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 

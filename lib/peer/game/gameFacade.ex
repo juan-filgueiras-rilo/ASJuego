@@ -186,6 +186,7 @@ defmodule GameFacade do
     {:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}
   end
 
+  
 
   # usarHechizoRemoto
   def handle_call(
@@ -197,6 +198,8 @@ defmodule GameFacade do
 
     case resultado do
       :continuar ->
+        IO.puts("PRINTEO DESDE LOGICA: " <> Kernel.inspect(callBackIU));
+        send(callBackIU, {:attack, hechizo});
         {:reply, :continuar,
          {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}
 
@@ -358,4 +361,12 @@ defmodule GameFacade do
     end
   end
 
+  def handle_call({:setUI, ui}, _from, {callBackIU, clases, jugador, combate})
+  do
+    {:reply, :ok, {ui, clases, jugador, combate}};
+  end
+  def setUICallback(pidJuego, newUICallback)
+  do
+    GenServer.call(pidJuego, {:setUI, newUICallback});
+  end
 end

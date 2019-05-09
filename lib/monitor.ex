@@ -4,19 +4,25 @@ defmodule Monitor do
   end
 
   def get(monitor_pid) do
-    send(monitor_pid, {:get_pid, self()})
-
-    receive do
-      {:ok, ip_addr} ->
-        ip_addr
-
-      _ ->
-        :error
-
-        # code
-    after 100 -> :error
+    
+    if Process.alive?(monitor_pid) do
+      send(monitor_pid, {:get_pid, self()});
+      receive do
+        {:ok, ip_addr} ->
+          ip_addr
+  
+        #_ ->
+        #  :error
+  
+          # code
+      
+      end
+    else
+      :error
     end
+    
   end
+
 
   defp loop(ip_addr, master_pid) do
     receive do

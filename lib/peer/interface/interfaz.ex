@@ -44,6 +44,7 @@ defmodule Interfaz do
   end
 
   def init(pidinter, game) do
+    GameFacade.setUICallback(game, self());
     pidred = Network.initialize(self())
     Network.set_game_pid(pidred,game)
     menu(pidinter, game, pidred)
@@ -73,6 +74,8 @@ defmodule Interfaz do
   #Recibe es el mensaje del rival tras atacar
 
   def juego(pidred, pidinter, game) do
+    IO.puts("PID DE INTERFAZ: " <> Kernel.inspect(self())); 
+    IO.puts("FIESTAAA: " <> Kernel.inspect([pidred | [pidinter | [game | []]]]))
     receive do
       {:attack, hechizo} ->
         send(pidinter, :game)
