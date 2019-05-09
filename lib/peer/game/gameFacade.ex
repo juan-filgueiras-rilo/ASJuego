@@ -182,8 +182,8 @@ defmodule GameFacade do
   end
   
   #retirarseRemoto
-  def handle_call(:retirada {:callBackIU, clases, jugador, {combate, _,_}}) do
-    {{:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}}
+  def handle_call(:retirada, {callBackIU, clases, jugador, {combate, _,_}}) do
+    {:reply, :victoria, {callBackIU, clases, Jugador.subirNivel(jugador), {:fueraCombate}}}
   end
 
 
