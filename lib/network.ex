@@ -22,21 +22,21 @@ defmodule Network do
         "status" ->
           {:ok, json} = JSON.encode(%{"result" => "ok"})
           Socket.Stream.send!(client, json)
-        "query fight" -> 
+        "query fight" ->
           enemyData = Jugador.load(jsonOptions["player"]);
           GenServer.call(pid_master, {:fightIncoming, enemyData, client, addr});
         "Reject fight" ->
           case GenServer.call(pid_master, :getEnemyFinder) do
-            :error -> 
+            :error ->
               :ok;
-            finder -> 
+            finder ->
               send(finder, :rejected);
-          end  
+          end
         "Accept fight" ->
           case GenServer.call(pid_master, :getEnemyFinder) do
-            :error -> 
+            :error ->
               :ok;
-            finder -> 
+            finder ->
               player = Jugador.load(jsonOptions["player"]);
               send(finder, {:accepted, player});
           end
@@ -60,11 +60,11 @@ defmodule Network do
           {client, _port} = client
 
           case data do
-            "PEER" -> 
+            "PEER" ->
               if list |> Enum.all?(fn x -> x != client end) do
                 Network.add_peer(pidCallback, client)
               end
-            "SUPERPEER" -> 
+            "SUPERPEER" ->
               if list |> Enum.all?(fn x -> x != client end) do
                 Network.add_superpeer(pidCallback, client)
               end
@@ -151,13 +151,13 @@ defmodule Network do
     end
 
     defp queryList(master_pid) do
-      
-      
+
+
       case Network.get_superpeers(master_pid) do
-        {:ok, superpeers} 
+        {:ok, superpeers}
           when is_list(superpeers)
           and superpeers != []->
-          
+
           #IO.puts("WORKING")
           peerList = superpeers |> Enum.random()
           |> Monitor.get()
@@ -165,7 +165,7 @@ defmodule Network do
           case peerList do
             :error -> :error
             list -> Enum.map(list, fn x -> Network.add_peer(master_pid, x) end)
-          end 
+          end
         _ ->
           :ok
       end
@@ -225,7 +225,7 @@ defmodule Network do
     def init(pid_network, list, player) do
       spawn(fn -> loop(pid_network, list, player) end);
     end
-    
+
     defp loop(pid_network, [], player) do
       GenServer.call(pid_network, {:establish_Game, :notFound});
     end
@@ -234,7 +234,7 @@ defmodule Network do
       case attemptFight(peer, player) do
         {:established, enemyData} ->
           GenServer.call(pid_network, {:establish_Game, {peer, enemyData}})
-        :rejected -> 
+        :rejected ->
           loop(pid_network, peers, player)
       end
     end
@@ -244,7 +244,7 @@ defmodule Network do
       {a,b,c,d} = Monitor.get(peer);
       addr = "#{a}.#{b}.#{c}.#{d}";
       socket = Socket.TCP.connect!(addr, 8000);
-      
+
       {:ok, json} = JSON.encode(%{
         "function" => "query fight",
         "player" => Jugador.save(player)
@@ -252,7 +252,7 @@ defmodule Network do
       Socket.Stream.send(socket, json);
       Socket.Stream.close!(socket);
 
-      
+
       receive do
         {:accepted, player} -> {:established, player}
         :rejected -> :rejected
@@ -296,7 +296,7 @@ defmodule Network do
       {:finding, finderPid} -> {:reply, finderPid, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
       _ -> {:reply, :error, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
     end
-    
+
   end
 
   def handle_call({:add_peer, peer}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
@@ -305,7 +305,7 @@ defmodule Network do
       x -> x
     end
     if ((length(peers) < 50) and (pair2 != :finding)) do
-      
+
 
       if !Enum.any?(peers, fn x -> Monitor.get(x) == peer end) do
         IO.puts("Añadiendo peer: " <> Kernel.inspect(peer))
@@ -323,7 +323,7 @@ defmodule Network do
   def handle_call({:remove_peer, peer}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     case pair do
       {:finding, _} -> {:reply, :removeOnFindError, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
-      _ -> 
+      _ ->
         IO.puts("Eliminando peer: " <> Kernel.inspect(peer));
         peers =
           peers
@@ -331,12 +331,12 @@ defmodule Network do
 
         {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
     end
-    
+
   end
 
   def handle_call({:add_superpeer, peer}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     if length(superPeers) < 50 do
-      
+
 
       if !Enum.any?(superPeers, fn x -> Monitor.get(x) == peer end) do
         IO.puts("Añadiendo superpeer: " <> Kernel.inspect(peer))
@@ -350,7 +350,7 @@ defmodule Network do
       {:reply, :no, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
     end
   end
-  
+
   def handle_call({:remove_superpeer, peer}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     IO.puts("Eliminando superpeer: " <> Kernel.inspect(peer));
     superPeers =
@@ -361,11 +361,11 @@ defmodule Network do
   end
 
 
-  def handle_call(:get_peers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do 
+  def handle_call(:get_peers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     {:reply, peers |> Enum.map(fn x -> Monitor.get(x) end), {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
-  def handle_call(:get_superpeers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do 
+  def handle_call(:get_superpeers, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     {:reply, superPeers |> Enum.map(fn x -> Monitor.get(x) end), {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
@@ -405,8 +405,8 @@ defmodule Network do
     socket = Socket.TCP.connect!(addr, 8000);
     Socket.Stream.send!(socket, msg);
     Socket.Stream.close!(socket);
-    
-    
+
+
 
 
 
@@ -426,7 +426,7 @@ defmodule Network do
   def handle_call({:establish_Game, data}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:finding, finderPid}})
   do
     case data do
-      :notFound -> 
+      :notFound ->
         send(uIPid, {:noGameAvailable});
         {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
       {addr, enemyData} ->
@@ -436,8 +436,8 @@ defmodule Network do
         GameFacade.ackCombate(gamePid, self(), enemyData);
 
         {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr}}}
-       
-      _ -> 
+
+      _ ->
         {:reply, :error, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:finding, finderPid}}}
     end
   end
@@ -446,7 +446,7 @@ defmodule Network do
   def handle_call({:findGame}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair})
   do
     case pair do
-      :notPaired -> 
+      :notPaired ->
         player = GameFacade.obtenerJugador(gamePid);
         finderPid = EnemyFinder.init(self(), peers, player);
         {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:finding, finderPid}}}
@@ -459,8 +459,10 @@ defmodule Network do
     {:reply, :ok, {uIPid, pid, superPeers, peers, death_manager, super_death_manager, pair}}
   end
 
-
-  def add_superpeer(pid_network, pid) 
+  def set_GamePid(pid_network,gamePid) do
+    GenServer.call(pid_network, {:setGamePid,gamePid})
+  end
+  def add_superpeer(pid_network, pid)
   do
     GenServer.call(pid_network, {:add_superpeer, pid})
   end
@@ -530,7 +532,7 @@ end
 defmodule DebugGuay do
   def debug()
   do
-    spawn(fn -> 
+    spawn(fn ->
       loop()
     end)
   end

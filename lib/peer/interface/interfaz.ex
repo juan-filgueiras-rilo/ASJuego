@@ -45,6 +45,7 @@ defmodule Interfaz do
 
   def init(pidinter, game) do
     pidred = Network.initialize(self())
+    Network.set_game_pid(pidred,game)
     menu(pidinter, game, pidred)
   end
 
@@ -83,7 +84,7 @@ defmodule Interfaz do
       :escapar ->
         IO.puts("\n\nEl jugador ha escapado")
         IO.puts("Partida finalizada\n\n")
-        
+
 		#send(node, :end)
 
       :end ->
@@ -94,7 +95,7 @@ defmodule Interfaz do
 
   def jugada_partida(pidred, pidinter, "1\n", game) do
     IO.puts("Viendo hechizos disponibles...\n")
-	
+
     nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     Utils.mostrarHechizosDetallados(GameFacade.getHechizosDisponibles(game), nivel, 1)
     send(pidinter, :game)
@@ -150,7 +151,7 @@ defmodule Interfaz do
   end
 
 
- 
+
 
   def accion_hechizo(1, [h | _])
   do
@@ -170,13 +171,13 @@ defmodule Interfaz do
   do
     :numeroInvalido
   end
-  
+
 
 
   def jugada_partida(pidred, pidinter, "5\n", game) do
     IO.puts("Finalizando partida...\n")
     GameFacade.retirarse(game)
-	
+
 	#Enviar mensaje al rival que me retiro
     #send(node, :escapar)
   end
@@ -191,10 +192,10 @@ defmodule Interfaz do
 
 
 # Se inicia la partida
-	
+
   def op_juego("S\n", pidinter, game, pidred) do
     IO.puts("\n\nA jugar\n!")
-	
+
     send(pidinter, :game)
 
 	juego(pidred, pidinter, game)
