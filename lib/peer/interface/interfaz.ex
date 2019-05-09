@@ -139,15 +139,9 @@ defmodule Interfaz do
 							    :victoria -> IO.puts("VICTORIAAA")
 							    _ ->  IO.puts("Hechizo utilizado!")
 								      IO.puts("Espere su turno...\n")
-									  send(node, {:recibe, hechizo})
+									  juego(pidred, pidinter, game)
 							  end
     end
-
-
-	#Añadir metodo GameFacade.userHechizoRemoto (game, hechizo) en el recibeS
-
-	#Enviar hechizo tb
-
   end
 
 
