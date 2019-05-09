@@ -200,7 +200,6 @@ defmodule GameFacade do
 
     case resultado do
       :continuar ->
-        IO.puts("PRINTEO DESDE LOGICA: " <> Kernel.inspect(callBackIU));
         send(callBackIU, {:attack, hechizo});
         {:reply, :continuar,
          {callBackIU, clases, jugador, {:combate, pidCallbackRed, pidCombate}}}

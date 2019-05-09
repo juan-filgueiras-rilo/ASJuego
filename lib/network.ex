@@ -169,7 +169,6 @@ defmodule Network do
         {:ok, superpeers}
         when is_list(superpeers) and
                superpeers != [] ->
-          # IO.puts("WORKING")
           peerList =
             superpeers
             |> Enum.random()
@@ -306,7 +305,6 @@ defmodule Network do
 
   # Loop de
   def init({uIPid}) do
-    IO.puts("Lanzado")
     SocketNetworking.init(self())
     PeerAutodetection.init(self())
     death_manager = DeathManager.init(self())
@@ -511,7 +509,6 @@ defmodule Network do
       "function" => "Accept fight",
       "player" => Jugador.save(player)
     });
-    IO.inspect(addr);
     {a,b,c,d} = addr;
     addr = "#{a}.#{b}.#{c}.#{d}";
     socket = Socket.TCP.connect!(addr, 8000);

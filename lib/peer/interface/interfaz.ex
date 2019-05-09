@@ -74,8 +74,6 @@ defmodule Interfaz do
   #Recibe es el mensaje del rival tras atacar
 
   def juego(pidred, pidinter, game) do
-    IO.puts("PID DE INTERFAZ: " <> Kernel.inspect(self())); 
-    IO.puts("FIESTAAA: " <> Kernel.inspect([pidred | [pidinter | [game | []]]]))
     receive do
       {:attack, hechizo} ->
         send(pidinter, :game)
@@ -137,7 +135,6 @@ defmodule Interfaz do
                               hechizo = accion_hechizo(opcion, hechizos)
 							  resultado = GameFacade.usarHechizoPropio(game, hechizo)
 							  
-							  IO.inspect(resultado)
 
 							  case resultado do
 							    :victoria -> IO.puts("Enhorabuena, has ganado")
