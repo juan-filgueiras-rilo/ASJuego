@@ -197,6 +197,12 @@ defmodule Interfaz do
     IO.puts("\n\nA jugar\n!")
 	
 	Network.acceptIncoming(pidred)
+	
+	
+	receive do
+		:yes -> 
+		:no -> IO.puts ("No se pudo establecer el combate")
+	end 
 
     send(pidinter, :game)
 
