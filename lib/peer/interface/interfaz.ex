@@ -58,7 +58,7 @@ defmodule Interfaz do
         IO.puts("Recibida conexion")
         IO.puts("Usted desea jugar? (S o N)")
         inicio_juego(pidinter, game, pidred)
-		send (pidinter, :menu)
+		send(pidinter, :menu)
         menu(pidinter, game, pidred)
     end
   end
@@ -140,7 +140,7 @@ defmodule Interfaz do
 							    _ ->  IO.puts("Hechizo utilizado!")
 								      IO.puts("Espere su turno...\n")
 									  juego(pidred, pidinter, game)
-									  send (self(), :end)
+									  send(self(), :end)
 							  end
     end
   end
