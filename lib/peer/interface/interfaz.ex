@@ -7,10 +7,10 @@ defmodule Interfaz do
     IO.puts("Introduzca 2 para ver datos del jugador:")
     IO.puts("Introduzca 3 para ver datos de las clases:")
     IO.puts("Introduzca 4 para finalizar el juego\n")
-    recibir(pid)
+    interaccion_usuario(pid)
   end
 
-  def recibir(pid) do
+  def interaccion_usuario(pid) do
     op = IO.gets("")
     send(pid, {:op, op})
 
@@ -20,14 +20,14 @@ defmodule Interfaz do
         IO.puts("Introduzca 2 para ver datos del jugador:")
         IO.puts("Introduzca 3 para ver datos de las clases:")
         IO.puts("Introduzca 4 para finalizar el juego\n")
-        recibir(pid)
+        interaccion_usuario(pid)
 
       :exit ->
         :ok
 
       :play ->
         IO.puts("Usted desea jugar? (S o N)")
-        recibir(pid)
+        interaccion_usuario(pid)
 
       :game ->
         IO.puts("Introduzca 1 para ver hechizos disponibles:")
@@ -35,10 +35,10 @@ defmodule Interfaz do
         IO.puts("Introduzca 3 para ver datos del rival:")
         IO.puts("Introduzca 4 para utilizar hechizo")
         IO.puts("Introduzca 5 para huir del combate\n")
-        recibir(pid)
+        interaccion_usuario(pid)
 
 
-	  :hechizo -> recibir(pid)
+	  :hechizo -> interaccion_usuario(pid)
 
     end
   end
@@ -77,7 +77,7 @@ defmodule Interfaz do
     IO.puts("PID DE INTERFAZ: " <> Kernel.inspect(self())); 
     IO.puts("FIESTAAA: " <> Kernel.inspect([pidred | [pidinter | [game | []]]]))
     receive do
-      {:attack, hechizo} ->
+      {:attack, _} ->
         send(pidinter, :game)
         juego(pidred, pidinter, game)
 
@@ -97,7 +97,7 @@ defmodule Interfaz do
   end
 
 
-  def jugada_partida(pidred, pidinter, "1\n", game) do
+  def jugada_partida(_, pidinter, "1\n", game) do
     IO.puts("Viendo hechizos disponibles...\n")
 
     nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
@@ -235,7 +235,7 @@ defmodule Interfaz do
         juego(pidred, pidinter, game)
 
       :noGameAvailable ->
-        IO.puts("No jugar")
+        IO.puts("\n\nOponente no encontrado. Vuelva a intentarlo")
     end
 
     send(pidinter, :menu)
@@ -243,24 +243,26 @@ defmodule Interfaz do
   end
 
   def operaciones("2\n", pidinter, game, pidred) do
+	IO.puts ("\n\nDatos del jugador:\n")
 	Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pidinter, :menu)
     menu(pidinter, game, pidred)
   end
 
   def operaciones("3\n", pidinter, game, pidred) do
+    IO.puts ("\n\nDatos de las clases:\n")
     Utils.mostrarClases(GameFacade.listarClases(game), 1)
     send(pidinter, :menu)
 	menu(pidinter, game, pidred)
   end
 
   def operaciones("4\n", pidinter, _, _) do
-    IO.puts("Juego finalizado\n")
+    IO.puts("\nJuego finalizado\n")
     send(pidinter, :exit)
   end
 
   def operaciones(_, pidinter, game, pidred) do
-    IO.puts("Opcion erronea...\n")
+    IO.puts("\n\nOpcion erronea. Vuelva a intentarlo\n\n")
     send(pidinter, :menu)
     menu(pidinter, game, pidred)
   end
