@@ -2,7 +2,9 @@ defmodule Interfaz do
   def inicio(data) do
     mipid = self()
     pid = spawn(fn -> Interfaz.init(mipid, data) end)
-    IO.puts("Hola! Bienvenido a xxxxxxxxxxxx\n")
+	IO.puts("\t|--------------------|")
+    IO.puts("\t|   Adventure Game   |")
+	IO.puts("\t|--------------------|\n\n")
     IO.puts("Introduzca 1 para iniciar un combate:")
     IO.puts("Introduzca 2 para ver datos del jugador:")
     IO.puts("Introduzca 3 para ver datos de las clases:")
@@ -55,7 +57,7 @@ defmodule Interfaz do
       {:op, op} ->
         operaciones(op, pidinter, game, pidred)
 
-      {:fightIncoming, data} ->
+      {:fightIncoming, _} ->
         IO.puts("Recibida conexion")
         IO.puts("Usted desea jugar? (S o N)")
         inicio_juego(pidinter, game, pidred)
@@ -73,17 +75,15 @@ defmodule Interfaz do
 
   #Recibe es el mensaje del rival tras atacar
 
-  def juego(pidred, pidinter, game) do
-    IO.puts("PID DE INTERFAZ: " <> Kernel.inspect(self())); 
-    IO.puts("FIESTAAA: " <> Kernel.inspect([pidred | [pidinter | [game | []]]]))
+  def juego(pidinter, game) do
     receive do
       {:attack, _} ->
         send(pidinter, :game)
-        juego(pidred, pidinter, game)
+        juego(pidinter, game)
 
       {:op, op} ->
-        jugada_partida(pidred, pidinter, op, game)
-        juego(pidred, pidinter, game)
+        jugada_partida(pidinter, op, game)
+        juego(pidinter, game)
 
       :escapar ->
         IO.puts("\n\nEl jugador ha escapado")
@@ -97,7 +97,7 @@ defmodule Interfaz do
   end
 
 
-  def jugada_partida(_, pidinter, "1\n", game) do
+  def jugada_partida(pidinter, "1\n", game) do
     IO.puts("Viendo hechizos disponibles...\n")
 
     nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
@@ -105,12 +105,12 @@ defmodule Interfaz do
     send(pidinter, :game)
   end
 
-  def jugada_partida(pidred, pidinter, "2\n", game) do
+  def jugada_partida(pidinter, "2\n", game) do
     Utils.mostrarJugador(GameFacade.obtenerJugador(game), 1)
     send(pidinter, :game)
   end
 
-  def jugada_partida(pidred, pidinter, "3\n", game) do
+  def jugada_partida(pidinter, "3\n", game) do
     IO.puts("Viendo datos rival...\n")
 	enemigo = GameFacade.obtenerEnemigo(game)
     Utils.mostrarJugador(enemigo, 1)
@@ -118,7 +118,7 @@ defmodule Interfaz do
   end
 
 
-  def jugada_partida(pidred, pidinter, "4\n", game) do
+  def jugada_partida(pidinter, "4\n", game) do
 
     IO.puts("Mostrando hechizos...\n")
 	  nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
@@ -147,6 +147,12 @@ defmodule Interfaz do
 								      IO.puts("Espere su turno...\n")
 							  end
     end
+
+  end
+  
+    def jugada_partida(pidinter, _, _) do
+    IO.puts("Opcion erronea..\n")
+    send(pidinter, :game)
   end
   
   
@@ -162,7 +168,7 @@ defmodule Interfaz do
     h
   end
 
-  def accion_hechizo(numero, [h | hechizos])
+  def accion_hechizo(numero, [_ | hechizos])
     when is_integer(numero)
     and numero > 1
   do
@@ -178,16 +184,6 @@ defmodule Interfaz do
 
 
 
-  def jugada_partida(pidred, pidinter, "5\n", game) do
-    IO.puts("Finalizando partida...\n")
-    GameFacade.retirarse(game)
-  end
-
-  def jugada_partida(pidred, pidinter, _, _) do
-    IO.puts("Opcion erronea..\n")
-    send(pidinter, :game)
-  end
-
 
 #eliminar posteriormente el parametro borrar
 
@@ -202,7 +198,7 @@ defmodule Interfaz do
 	
 	receive do
 		:yes -> send(pidinter, :game)
-                juego(pidred, pidinter, game)
+                juego(pidinter, game)
 				send(pidinter, :menu)
 			    menu(pidinter, game, pidred)
 
@@ -212,9 +208,8 @@ defmodule Interfaz do
 	end 
   end
 
-  def op_juego("N\n", pidinter, game, pidred) do
+  def op_juego("N\n", pidinter, _, pidred) do
 	Network.rejectIncoming(pidred)
-    #send(node, :no)
     send(pidinter, :menu)
     :ok
   end
@@ -232,7 +227,7 @@ defmodule Interfaz do
       :playerFound ->
         IO.puts("\n\nA jugar!")
         IO.puts("Espere su turno...")
-        juego(pidred, pidinter, game)
+        juego(pidinter, game)
 
       :noGameAvailable ->
         IO.puts("\n\nOponente no encontrado. Vuelva a intentarlo")
