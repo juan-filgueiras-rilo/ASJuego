@@ -91,7 +91,8 @@ defmodule Interfaz do
       :end ->
         :ok
 		
-      :derrota -> :ok
+      :derrota -> IO.puts("Has perdido la partida!\n\n")
+				  :ok
     end
   end
 
@@ -140,7 +141,7 @@ defmodule Interfaz do
 							  IO.inspect(resultado)
 
 							  case resultado do
-							    :victoria -> IO.puts("Enhorabuena, has ganado")
+							    :victoria -> IO.puts("Enhorabuena, has ganado!\n\n")
 											 pid = self()
 											 spawn(fn -> Interfaz.mensaje_propio(pid) end)
 							    _ ->  IO.puts("Hechizo utilizado. Espere su turno\n")

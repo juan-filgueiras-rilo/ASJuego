@@ -1,0 +1,4 @@
+inicio()
+interaccion_usuario()
+menu()
+juego()
