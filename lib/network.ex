@@ -2,6 +2,11 @@ defmodule Network do
   use GenServer
 
 
+  @moduledoc """
+    Este módulo recibe un socket ya abierto, e intentará
+    utilizarlo para encargarse de sincronizar el estado del
+    juego entre dos peers.
+  """
   defmodule CombatNetworking do
     
     def init(socket, callback) do
@@ -47,6 +52,11 @@ defmodule Network do
   end
 
 
+  @moduledoc """
+    Este módulo se encarga de escuchar en un puerto TCP, para recibir
+    conexiones entrantes y ejeutar los métodos correspondientes en el módulo
+    Network.
+  """
   defmodule SocketNetworking do
     def init(pid_master) do
       spawn(fn -> initloop(pid_master) end)
@@ -138,7 +148,19 @@ defmodule Network do
     end
   end
 
+  @moduledoc """
+    Este módulo gestiona el sistema de autodetección entre peers.
+    Dicha autodetección se basa en emitir el mensaje "PEER" por las
+    direcciones de broadcast de todas las interfaces de red detectadas.
+  """
   defmodule PeerAutodetection do
+
+    @moduledoc """
+      Este submódulo se encarga de escuchar en un puerto UDP por mensajes
+      de autodetección de otros peers. Cuando recibe un mensaje de este estilo,
+      se comunica con el módulo "Network" para dar de alta el nuevo peer en la lista
+      de peers.
+    """
     defmodule Listener do
       def init(pidCallback, socket) do
         loop(pidCallback, socket)
@@ -173,6 +195,10 @@ defmodule Network do
       end
     end
 
+    @moduledoc """
+      Este módulo se encarga de emitir constantemente mensajes de broadcast
+      para poder ser detectado por otros peers.
+    """
     defmodule Beacon do
       def init(socketsList) do
         loop(socketsList)
@@ -223,7 +249,7 @@ defmodule Network do
     end
   end
 
-  # Manages the state of the superPeers
+  # Manages the state of the superPeers (disable).
   defmodule SuperPeerManager do
     def init(master_pid) do
       spawn(fn -> initloop(master_pid) end)
@@ -284,7 +310,13 @@ defmodule Network do
     end
   end
 
-  # Removes Peers when detects death
+  @moduledoc """
+    Este módulo se encarga de controlar los monitores que
+    gestionan los peers conocidos. Cuando se detecta que un peer
+    conocido está caído, el monitor asociado se comunica con este
+    módulo para que así este se comunique con el módulo de red y lo
+    elimine.
+  """
   defmodule DeathManager do
     def init(pid_network) do
       spawn(fn -> loop(pid_network, :unlinked) end)
@@ -306,7 +338,13 @@ defmodule Network do
     end
   end
 
-  # Removes SuperPeers when detects death
+  @moduledoc """
+    Este módulo se encarga de controlar los monitores que
+    gestionan los superpeers conocidos. Cuando se detecta que un 
+    superpeer conocido está caído, el monitor asociado se comunica
+    con este módulo para que así este se comunique con el módulo 
+    de red y lo elimine.
+  """
   defmodule SuperDeathManager do
     def init(pid_network) do
       spawn(fn -> loop(pid_network) end)
@@ -321,6 +359,12 @@ defmodule Network do
     end
   end
 
+  @moduledoc """
+    Este módulo existe para poder realizar de forma asíncrona al módulo
+    central de red la búsqueda de enemigos. Cuando encuentre un enemigo
+    dispuesto a jugar (o en su defecto, agote los posibles peers), se
+    lo comunica al módulo "Network"
+  """
   defmodule EnemyFinder do
     def init(pid_network, list, player) do
       spawn(fn -> loop(pid_network, list, player) end)
