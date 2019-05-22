@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ "$#" -eq 0 ]; then
-    sudo docker run \
+    docker run \
     -it \
     --rm \
     -v "/home/marco/FIC/Practicas/Tercero/Segundo Cuatrimestre/AS/practica":/practica \
@@ -9,7 +9,7 @@ if [ "$#" -eq 0 ]; then
     iex -S mix
 fi
 if [ "$#" -eq 1 ]; then
-    sudo docker run \
+    docker run \
     -it \
     --rm \
     -v "/home/marco/FIC/Practicas/Tercero/Segundo Cuatrimestre/AS/practica":/practica \

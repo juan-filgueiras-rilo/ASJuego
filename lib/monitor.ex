@@ -34,11 +34,12 @@ defmodule Monitor do
         loop(ip_addr, master_pid)
     after
       2000 ->
-        a = check(ip_addr)
-
+        #a = check(ip_addr)
+        a = :alive;
         case a do
           :dead ->
             send(master_pid, {:dead, ip_addr})
+            Process.exit(self(), :normal);
 
           :alive ->
             loop(ip_addr, master_pid)
@@ -79,8 +80,7 @@ defmodule Monitor do
           :dead
         _x-> IO.inspect(_x);
               :dead
-        after 1 -> 
-          Process.exit(pid, :normal);
+        after 1 ->
           :dead
       end
 

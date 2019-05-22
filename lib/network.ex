@@ -63,13 +63,15 @@ defmodule Network do
     end
 
     def initloop(pid_master) do
-      socket = Socket.TCP.listen!(8000, [{:options, [:keepalive]}, {:mode, :active}]);
+      socket = Socket.TCP.listen!(8000, [{:options, [:keepalive]}, {:mode, :passive}]);
       loop(pid_master, socket)
     end
 
     def loop(pid_master, socket) do
       result = try do
-        socket |> Socket.accept!([{:options, [:keepalive]}, {:mode, :active}]);
+        case socket |> Socket.accept([{:options, [:keepalive]}, {:mode, :passive}]) do
+          {:ok, socket} -> socket
+        end
       rescue
         _ -> :error
           
@@ -78,22 +80,23 @@ defmodule Network do
         {:ok, {addr, _port}} = :inet.peername(result)
         spawn(fn -> loop(pid_master, socket) end)
         handle_client(pid_master, result, addr)
-      else
-        initloop(pid_master)
       end
+        loop(pid_master, socket)
+      
       
     end
 
     def handle_client(pid_master, client, addr) do
       try do
         
-        data = receive do 
-          {:tcp, socket, msg} ->  msg
-        end
-        
-        #data = Socket.Stream.recv!(client);
+        #data = receive do 
+         # {:tcp, socket, msg} ->  msg
+        #end
+        #Socket.TCP.process(client, self());
+        {:ok, data} = Socket.Stream.recv(client);
+        IO.puts("DATA="<>Kernel.inspect(data));
         {:ok, jsonOptions} = JSON.decode(data)
-  
+        
         closeSocket = case jsonOptions["function"] do
           "status" ->
             {:ok, json} = JSON.encode(%{"result" => "ok"});
@@ -104,7 +107,7 @@ defmodule Network do
             enemyData = Jugador.load(jsonOptions["player"]);
             IO.puts("EnemyData es" <> Kernel.inspect(enemyData));
             GenServer.call(pid_master, {:fightIncoming, enemyData, client, addr});
-            true
+            false
   
           "Reject fight" ->
             case GenServer.call(pid_master, :getEnemyFinder) do
@@ -117,11 +120,13 @@ defmodule Network do
             true;
   
           "Accept fight" ->
+            IO.puts("buscando el finder");
             case GenServer.call(pid_master, :getEnemyFinder) do
               :error ->
                 :ok
   
               finder ->
+                IO.puts("Pepe 24mil");
                 player = Jugador.load(jsonOptions["player"])
                 send(finder, {:accepted, player})
             end;
@@ -131,9 +136,9 @@ defmodule Network do
             hechizo = Hechizo.load(jsonOptions["hechizo"]);
             Network.hechizo_recibido(pid_master, hechizo);
             false
-          "ACK fight"  -> 
-            GenServer.call(pid_master, {:ackIncomingFight, client});
-            false
+          #"ACK fight"  -> 
+            #GenServer.call(pid_master, {:ackIncomingFight});
+            #false
         end
              
         if (closeSocket == true) do
@@ -141,7 +146,7 @@ defmodule Network do
           #Socket.Stream.close!(client)
         end
       rescue
-        _ -> IO.puts("Desconexion");
+        _e -> IO.puts("Desconexion" <> Kernel.inspect(_e));
       end
       
       
@@ -376,12 +381,12 @@ defmodule Network do
 
     defp loop(pid_network, [peer | peers], player) do
       case attemptFight(peer, player) do
-        {:established, enemyData} ->
+        {:established, enemyData, socket} ->
           try do
             addr = Monitor.get(peer);
             {a,b,c,d} = addr;
             addr = "#{a}.#{b}.#{c}.#{d}";
-            socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
+            #socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
 
             {:ok, json} = JSON.encode(%{
               "function" => "ACK fight"
@@ -403,7 +408,7 @@ defmodule Network do
       try do
         {a, b, c, d} = Monitor.get(peer)
         addr = "#{a}.#{b}.#{c}.#{d}"
-        socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}])
+        {:ok, socket} = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :passive}])
 
         {:ok, json} =
           JSON.encode(%{
@@ -412,12 +417,32 @@ defmodule Network do
           })
 
         Socket.Stream.send(socket, json)
+        pid = self();
+        spawn(fn -> 
+          :timer.sleep(10000);
+          send(pid, {:rejected, player});
+        end);
+        spawn(fn ->
+          Socket.TCP.process(socket, self())
+          result = Socket.Stream.recv(socket);
+          case result do
+            {:ok, msg} ->  IO.puts("FUNCIONA DE UNA PUÑETERA VEZ" <> Kernel.inspect(msg));
+            e -> IO.puts("ERROR FATAL PORQUE ME SALE DE LOS HUEVOS " <> Kernel.inspect(e));
+          end
+         
+          send(pid, {:accepted, player})
+        end);
         #Socket.Stream.close!(socket)
         #estaba
 
+        {:ok, msg} = Socket.Stream.recv(socket);
+        {:ok, json} = JSON.decode(msg);
+        IO.puts("hola: "<> Kernel.inspect(json));
         receive do
-          {:accepted, player} -> {:established, player}
-          :rejected -> :rejected
+          {:accepted, player} -> {:established, player, socket}
+          {:rejected, player} -> 
+            #Socket.Stream.close!(socket);
+            :rejected
         after
           10000 -> :rejected
         end
@@ -491,9 +516,9 @@ defmodule Network do
   end
 
 
-  def handle_call({:ackIncomingFight, socket}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
+  def handle_call({:ackIncomingFight}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     case pair do
-      {:awaitingACK, addr} -> 
+      {:awaitingACK, socket, addr} -> 
         send(uIPid, :yes) # Le comunico a la interfaz que entramos en combate
         pid = self();
         spawn(fn -> CombatNetworking.init(socket, pid)end);
@@ -643,9 +668,9 @@ defmodule Network do
 
     {a,b,c,d} = addr;
     addr = "#{a}.#{b}.#{c}.#{d}";
-    socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
+    #socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
     Socket.Stream.send!(socket, msg);
-    #Socket.Stream.close!(socket);
+    Socket.Stream.close!(socket);
     #estaba
     {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
   end
@@ -661,8 +686,9 @@ defmodule Network do
     });
     {a,b,c,d} = addr;
     addr = "#{a}.#{b}.#{c}.#{d}";
-    socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
+    #socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
     Socket.Stream.send!(socket, msg);
+
     #Socket.Stream.close!(socket);
     #estaba
     pidRed = self();
@@ -671,8 +697,21 @@ defmodule Network do
       GenServer.call(pidRed, :noAckIncomingFight);
     end);
 
+    spawn(fn ->
+      try do
+        {:ok, msg} = Socket.Stream.recv(socket);
+        {:ok, json} = JSON.decode(msg);
+        case json["function"] do
+          "ACK fight" -> GenServer.call(pidRed, :ackIncomingFight)
+          _ -> :error
+        end
+      rescue
+        _ -> :error
+      end
+    end)
+
     {:reply, :ok,
-     {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:awaitingACK, addr}}}
+     {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:awaitingACK, socket, addr}}}
   end
 
   def handle_call(
