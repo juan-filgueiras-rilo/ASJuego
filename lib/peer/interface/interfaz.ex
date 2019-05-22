@@ -73,7 +73,6 @@ defmodule Interfaz do
 
 
   #Recibe es el mensaje del rival tras atacar
-
   def juego(pidinter, game) do
     receive do
       {:attack, _} ->
@@ -137,7 +136,7 @@ defmodule Interfaz do
         and op != "0\n"   ->  value = Integer.parse(String.replace(op, "\n", ""));
 		
 							  case value do
-								:error -> IO.puts ("Opcion erronea.\n")
+								:error -> IO.puts ("\nOpcion erronea.\n")
 										  jugada_partida(pidinter, "4\n", game)
 								{opcion, _} -> if opcion > 0 and opcion < Kernel.length(hechizos) do
 												  hechizo = accion_hechizo(opcion, hechizos)
@@ -152,7 +151,7 @@ defmodule Interfaz do
 													_ ->  IO.puts("Hechizo utilizado. Espere su turno\n")
 												  end
 												else 
-													IO.puts ("Opcion erronea.\n")
+													IO.puts ("\nOpcion erronea.\n")
 													jugada_partida(pidinter, "4\n", game)
 												end
 								end
