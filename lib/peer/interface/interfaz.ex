@@ -124,9 +124,9 @@ defmodule Interfaz do
     IO.puts("Mostrando hechizos...\n")
 	  nivel = Jugador.getNivel(GameFacade.obtenerJugador(game))
     hechizos = GameFacade.getHechizosDisponibles(game)
-    Utils.mostrarHechizosDetallados(hechizos, nivel, 1);
-    #IO.puts("Introduzca un número entre 1 y " <> Kernel.inspect(List.length(hechizos)));
-    IO.puts("Introduzca 0 para volver atras");
+    Utils.mostrarHechizosDetallados(hechizos, nivel, 1)
+    IO.puts("Introduzca un numero entre 1 y " <> Kernel.inspect(Kernel.length(hechizos)) <> " para ejecutar un hechizo.")
+	IO.puts("Introduzca 0 para volver atras.");
 
 	send pidinter, :hechizo
 
@@ -134,18 +134,28 @@ defmodule Interfaz do
       {:op, "0\n"} -> send(pidinter, :game)
       {:op, op}
         when is_binary(op)
-        and op != "0\n"   ->  {opcion, _} = Integer.parse(String.replace(op, "\n", ""));
-                              hechizo = accion_hechizo(opcion, hechizos)
-							  resultado = GameFacade.usarHechizoPropio(game, hechizo)
-							  
-							  IO.inspect(resultado)
+        and op != "0\n"   ->  value = Integer.parse(String.replace(op, "\n", ""));
+		
+							  case value do
+								:error -> IO.puts ("Opcion erronea.\n")
+										  jugada_partida(pidinter, "4\n", game)
+								{opcion, _} -> if opcion > 0 and opcion < Kernel.length(hechizos) do
+												  hechizo = accion_hechizo(opcion, hechizos)
+												  resultado = GameFacade.usarHechizoPropio(game, hechizo)
+												  
+												  IO.inspect(resultado)
 
-							  case resultado do
-							    :victoria -> IO.puts("Enhorabuena, has ganado!\n\n")
-											 pid = self()
-											 spawn(fn -> Interfaz.mensaje_propio(pid) end)
-							    _ ->  IO.puts("Hechizo utilizado. Espere su turno\n")
-							  end
+												  case resultado do
+													:victoria -> IO.puts("Enhorabuena, has ganado!\n\n")
+																 pid = self()
+																 spawn(fn -> Interfaz.mensaje_propio(pid) end)
+													_ ->  IO.puts("Hechizo utilizado. Espere su turno\n")
+												  end
+												else 
+													IO.puts ("Opcion erronea.\n")
+													jugada_partida(pidinter, "4\n", game)
+												end
+								end
     end
 
   end
