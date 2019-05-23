@@ -1,166 +1,63 @@
 defmodule Network do
   use GenServer
 
-
-  @moduledoc """
-    Este módulo recibe un socket ya abierto, e intentará
-    utilizarlo para encargarse de sincronizar el estado del
-    juego entre dos peers.
-  """
-  defmodule CombatNetworking do
-    
-    def init(socket, callback) do
-      loop(socket, callback);
-    end
-
-    defp loop(socket, callback) do
-      result = try do
-        json = Socket.Stream.recv!(socket);
-        #:timer.sleep(500);
-        #IO.puts("Recibi: " <> Kernel.inspect(json));
-        if (not is_binary(json)) do
-          :ok
-        else
-          result = case JSON.decode(json) do
-            {:ok, json} -> 
-              case json["function"] do
-                "usarHechizo" ->
-                    hechizo = Hechizo.load(json["hechizo"]);
-                    Network.hechizo_recibido(callback, hechizo);
-                    :ok
-                _ -> :error
-              end
-            
-            _x -> :error
-          end;
-          case result do
-            :error -> IO.puts("Error: mensaje no comprendido");
-            _ -> :ok;
-          end;
-          :ok
-        end
-      rescue
-        _x -> 
-          IO.puts("Detectada desconexion: " <> Kernel.inspect(_x));
-          :disconnect
-      end
-      if (result != :disconnect) do
-        loop(socket, callback)
-      end
-      
-    end
-  end
-
-
-  @moduledoc """
-    Este módulo se encarga de escuchar en un puerto TCP, para recibir
-    conexiones entrantes y ejeutar los métodos correspondientes en el módulo
-    Network.
-  """
   defmodule SocketNetworking do
     def init(pid_master) do
-      spawn(fn -> initloop(pid_master) end)
-    end
-
-    def initloop(pid_master) do
-      socket = Socket.TCP.listen!(8000, [{:options, [:keepalive]}, {:mode, :active}]);
-      loop(pid_master, socket)
+      socket = Socket.TCP.listen!(8000)
+      spawn(fn -> loop(pid_master, socket) end)
     end
 
     def loop(pid_master, socket) do
-      result = try do
-        socket |> Socket.accept!([{:options, [:keepalive]}, {:mode, :active}]);
-      rescue
-        _ -> :error
-          
-      end
-      if (result != :error) do
-        {:ok, {addr, _port}} = :inet.peername(result)
-        spawn(fn -> loop(pid_master, socket) end)
-        handle_client(pid_master, result, addr)
-      else
-        initloop(pid_master)
-      end
-      
+      client = socket |> Socket.accept!()
+      {:ok, {addr, _port}} = :inet.peername(client)
+      spawn(fn -> handle_client(pid_master, client, addr) end)
+      loop(pid_master, socket)
     end
 
     def handle_client(pid_master, client, addr) do
-      try do
-        
-        data = receive do 
-          {:tcp, socket, msg} ->  msg
-        end
-        
-        #data = Socket.Stream.recv!(client);
-        {:ok, jsonOptions} = JSON.decode(data)
-  
-        closeSocket = case jsonOptions["function"] do
-          "status" ->
-            {:ok, json} = JSON.encode(%{"result" => "ok"});
-            Socket.Stream.send!(client, json);
-            true
-  
-          "query fight" ->
-            enemyData = Jugador.load(jsonOptions["player"]);
-            IO.puts("EnemyData es" <> Kernel.inspect(enemyData));
-            GenServer.call(pid_master, {:fightIncoming, enemyData, client, addr});
-            true
-  
-          "Reject fight" ->
-            case GenServer.call(pid_master, :getEnemyFinder) do
-              :error ->
-                :ok
-  
-              finder ->
-                send(finder, :rejected)
-            end;
-            true;
-  
-          "Accept fight" ->
-            case GenServer.call(pid_master, :getEnemyFinder) do
-              :error ->
-                :ok
-  
-              finder ->
-                player = Jugador.load(jsonOptions["player"])
-                send(finder, {:accepted, player})
-            end;
-            true
-  
-          "usarHechizo" ->
-            hechizo = Hechizo.load(jsonOptions["hechizo"]);
-            Network.hechizo_recibido(pid_master, hechizo);
-            false
-          "ACK fight"  -> 
-            GenServer.call(pid_master, {:ackIncomingFight, client});
-            false
-        end
-             
-        if (closeSocket == true) do
-          :ok
-          #Socket.Stream.close!(client)
-        end
-      rescue
-        _ -> IO.puts("Desconexion");
+      data = Socket.Stream.recv!(client)
+      {:ok, jsonOptions} = JSON.decode(data)
+
+      case jsonOptions["function"] do
+        "status" ->
+          {:ok, json} = JSON.encode(%{"result" => "ok"})
+          Socket.Stream.send!(client, json)
+
+        "query fight" ->
+          enemyData = Jugador.load(jsonOptions["player"])
+          GenServer.call(pid_master, {:fightIncoming, enemyData, client, addr})
+
+        "Reject fight" ->
+          case GenServer.call(pid_master, :getEnemyFinder) do
+            :error ->
+              :ok
+
+            finder ->
+              send(finder, :rejected)
+          end
+
+        "Accept fight" ->
+          case GenServer.call(pid_master, :getEnemyFinder) do
+            :error ->
+              :ok
+
+            finder ->
+              player = Jugador.load(jsonOptions["player"])
+              send(finder, {:accepted, player})
+          end
+
+        "usarHechizo" ->
+          hechizo = Hechizo.load(jsonOptions["hechizo"])
+          Network.hechizo_recibido(pid_master, hechizo)
+        "ACK fight"  -> 
+          GenServer.call(pid_master, :ackIncomingFight)
       end
-      
-      
+
+      Socket.Stream.close!(client)
     end
   end
 
-  @moduledoc """
-    Este módulo gestiona el sistema de autodetección entre peers.
-    Dicha autodetección se basa en emitir el mensaje "PEER" por las
-    direcciones de broadcast de todas las interfaces de red detectadas.
-  """
   defmodule PeerAutodetection do
-
-    @moduledoc """
-      Este submódulo se encarga de escuchar en un puerto UDP por mensajes
-      de autodetección de otros peers. Cuando recibe un mensaje de este estilo,
-      se comunica con el módulo "Network" para dar de alta el nuevo peer en la lista
-      de peers.
-    """
     defmodule Listener do
       def init(pidCallback, socket) do
         loop(pidCallback, socket)
@@ -195,10 +92,6 @@ defmodule Network do
       end
     end
 
-    @moduledoc """
-      Este módulo se encarga de emitir constantemente mensajes de broadcast
-      para poder ser detectado por otros peers.
-    """
     defmodule Beacon do
       def init(socketsList) do
         loop(socketsList)
@@ -249,7 +142,7 @@ defmodule Network do
     end
   end
 
-  # Manages the state of the superPeers (disable).
+  # Manages the state of the superPeers
   defmodule SuperPeerManager do
     def init(master_pid) do
       spawn(fn -> initloop(master_pid) end)
@@ -310,13 +203,7 @@ defmodule Network do
     end
   end
 
-  @moduledoc """
-    Este módulo se encarga de controlar los monitores que
-    gestionan los peers conocidos. Cuando se detecta que un peer
-    conocido está caído, el monitor asociado se comunica con este
-    módulo para que así este se comunique con el módulo de red y lo
-    elimine.
-  """
+  # Removes Peers when detects death
   defmodule DeathManager do
     def init(pid_network) do
       spawn(fn -> loop(pid_network, :unlinked) end)
@@ -338,13 +225,7 @@ defmodule Network do
     end
   end
 
-  @moduledoc """
-    Este módulo se encarga de controlar los monitores que
-    gestionan los superpeers conocidos. Cuando se detecta que un 
-    superpeer conocido está caído, el monitor asociado se comunica
-    con este módulo para que así este se comunique con el módulo 
-    de red y lo elimine.
-  """
+  # Removes SuperPeers when detects death
   defmodule SuperDeathManager do
     def init(pid_network) do
       spawn(fn -> loop(pid_network) end)
@@ -359,12 +240,6 @@ defmodule Network do
     end
   end
 
-  @moduledoc """
-    Este módulo existe para poder realizar de forma asíncrona al módulo
-    central de red la búsqueda de enemigos. Cuando encuentre un enemigo
-    dispuesto a jugar (o en su defecto, agote los posibles peers), se
-    lo comunica al módulo "Network"
-  """
   defmodule EnemyFinder do
     def init(pid_network, list, player) do
       spawn(fn -> loop(pid_network, list, player) end)
@@ -381,7 +256,7 @@ defmodule Network do
             addr = Monitor.get(peer);
             {a,b,c,d} = addr;
             addr = "#{a}.#{b}.#{c}.#{d}";
-            socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
+            socket = Socket.TCP.connect!(addr, 8000);
 
             {:ok, json} = JSON.encode(%{
               "function" => "ACK fight"
@@ -389,7 +264,9 @@ defmodule Network do
 
             Socket.Stream.send(socket, json);
 
-            GenServer.call(pid_network, {:establish_Game, {addr, socket, enemyData}})
+            Socket.Stream.close(socket);
+
+            GenServer.call(pid_network, {:establish_Game, {peer, enemyData}})
           rescue
             _ -> loop(pid_network, peers, player)
           end
@@ -403,7 +280,7 @@ defmodule Network do
       try do
         {a, b, c, d} = Monitor.get(peer)
         addr = "#{a}.#{b}.#{c}.#{d}"
-        socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}])
+        socket = Socket.TCP.connect!(addr, 8000)
 
         {:ok, json} =
           JSON.encode(%{
@@ -412,8 +289,7 @@ defmodule Network do
           })
 
         Socket.Stream.send(socket, json)
-        #Socket.Stream.close!(socket)
-        #estaba
+        Socket.Stream.close!(socket)
 
         receive do
           {:accepted, player} -> {:established, player}
@@ -425,30 +301,6 @@ defmodule Network do
         _ -> :rejected
       end
     end
-  end
-
-  def handle_info({:tcp_closed, socket}, state)
-  do
-    IO.puts("Socket cerrado");
-    {:noreply, state}
-  end
-
-  def handle_info({:tcp, socket, msg}, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr, socket}})
-  do
-    try do
-
-      {:ok, json} = JSON.decode(msg);
-      case json["function"] do
-        "usarHechizo" ->
-          hechizo = Hechizo.load(json["hechizo"]);
-          Network.hechizo_recibido(self(), hechizo);
-      end
-      {:noreply, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr, socket}}}
-      
-    rescue
-      _ -> {:noreply, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr, socket}}}
-    end
-
   end
 
   # Loop de
@@ -491,13 +343,11 @@ defmodule Network do
   end
 
 
-  def handle_call({:ackIncomingFight, socket}, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
+  def handle_call(:ackIncomingFight, _from, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}) do
     case pair do
       {:awaitingACK, addr} -> 
         send(uIPid, :yes) # Le comunico a la interfaz que entramos en combate
-        pid = self();
-        spawn(fn -> CombatNetworking.init(socket, pid)end);
-        {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr, socket}}}
+        {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr}}}
       _ -> {:reply, :error, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}}
     end
     
@@ -643,10 +493,10 @@ defmodule Network do
 
     {a,b,c,d} = addr;
     addr = "#{a}.#{b}.#{c}.#{d}";
-    socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
+    socket = Socket.TCP.connect!(addr, 8000);
     Socket.Stream.send!(socket, msg);
-    #Socket.Stream.close!(socket);
-    #estaba
+    Socket.Stream.close!(socket);
+
     {:reply, :ok, {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
   end
 
@@ -661,10 +511,10 @@ defmodule Network do
     });
     {a,b,c,d} = addr;
     addr = "#{a}.#{b}.#{c}.#{d}";
-    socket = Socket.TCP.connect!(addr, 8000, [{:options, [:keepalive]}, {:mode, :active}]);
+    socket = Socket.TCP.connect!(addr, 8000);
     Socket.Stream.send!(socket, msg);
-    #Socket.Stream.close!(socket);
-    #estaba
+    Socket.Stream.close!(socket);
+
     pidRed = self();
     spawn(fn -> 
       :timer.sleep(10000);
@@ -707,16 +557,14 @@ defmodule Network do
         {:reply, :ok,
          {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, :notPaired}}
 
-      {addr, socket, enemyData} ->
+      {addr, enemyData} ->
         send(uIPid, :playerFound)
 
         GameFacade.synCombate(gamePid)
         GameFacade.ackCombate(gamePid, self(), enemyData)
-        pid = self();
-        spawn(fn -> CombatNetworking.init(socket, pid)end);
 
         {:reply, :ok,
-         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr, socket}}}
+         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, {:paired, addr}}}
 
       _ ->
         {:reply, :error,
@@ -813,15 +661,22 @@ defmodule Network do
         {uIPid, gamePid, superPeers, peers, death_manager, super_death_manager, pair}
       ) do
     case pair do
-      {:paired, address, socket} ->
+      {:paired, address} ->
        
 
         {:ok, json} =
           JSON.encode(%{"function" => "usarHechizo", "hechizo" => Hechizo.save(hechizo)})
-
+        address = case address do
+          x when is_binary(x) -> x
+          x ->
+            addr = Monitor.get(x);
+            {a,b,c,d} = addr;
+            "#{a}.#{b}.#{c}.#{d}";
+        end
+        socket = Socket.TCP.connect!({address, 8000});
         socket |> Socket.Stream.send!(json)
 
-        #Socket.close(socket)
+        Socket.close(socket)
 
       _ ->
         :error
