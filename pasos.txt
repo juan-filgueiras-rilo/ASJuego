@@ -1,9 +1,0 @@
-#SuperPeer
-    # Modificar la ip de /data/SuperPeers con la tuya
-    iex.bat --name super@#{json_ip} --cookie chocolate -S mix
- |>   SuperPeer.fundar()
-
-#Peer
-    iex.bat --name #{CualquierNombre}@#{TuIp} --cookie chocolate -S mix
-    Network.initialize()
--> 
